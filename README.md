@@ -16,6 +16,7 @@ Emphasis on Security Best Practices, High Availability, and Cost Optimization
 
 This setup provides a production-grade Kubernetes environment with robust security and DevOps automation.
 
+![1_-5-brOYKHCKG-QHqQlysGg](https://github.com/user-attachments/assets/ccb8e885-ef56-4636-8e65-a1deda5b3a70)
 
 
 
