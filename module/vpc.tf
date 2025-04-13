@@ -84,4 +84,30 @@ resource "aws_subnet" "eks_private_subnet" {
   depends_on = [ aws_vpc.eks-vpc ]
 }
 
+resource "aws_route_table" "eks_public_rt" {
+  vpc_id = aws_vpc.eks-vpc.id
+
+  route = {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.eks_internet_gateway.id
+  }
+
+  tags = {
+    Name = var.public-rt-name
+    env = var.env
+
+  }
+
+
+  depends_on = [ aws_vpc.eks-vpc ]
+}
+
+resource "aws_route_table_association" "eks_public_rt_association" {
+    count = 3
+    route_table_id = aws_route_table.eks_public_rt.id
+
+    subnet_id = aws_subnet.eks_public_subnet[count.index].id
+
+    depends_on = [ aws_vpc.eks-vpc , aws_subnet.eks_public_subnet ]
+}
 
