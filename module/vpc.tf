@@ -159,3 +159,35 @@ resource "aws_route_table_association" "eks_private_rt_association" {
 
   depends_on = [ aws_vpc.eks-vpc , aws_subnet.eks_private_subnet ] 
 }
+
+resource "aws_security_group" "eks_security_group" {
+  
+  name = var.eks_sg_name
+  description = "Allow 443 port from jump servers only"
+
+  vpc_id = aws_vpc.eks-vpc
+
+  ingress {
+    from_port = 443 
+    to_port = 443
+    protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = var.eks_sg_name
+  }
+}
+
+
+
+
+
+
