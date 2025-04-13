@@ -70,3 +70,9 @@ variable "eks_nat_gateway" {
 variable "eks_private_rt_name" {
   
 }
+
+// iam role and policy 
+
+variable "is_eks_role_enabled" {
+  
+}
