@@ -53,3 +53,12 @@ variable "pri_sub_name" {
 variable "eks_private_subnet_count" {
   
 }
+
+
+variable "public-rt-name" {
+  
+}
+
+variable "eip_name" {
+  
+}
