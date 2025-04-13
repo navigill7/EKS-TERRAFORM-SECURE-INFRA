@@ -111,3 +111,12 @@ resource "aws_route_table_association" "eks_public_rt_association" {
     depends_on = [ aws_vpc.eks-vpc , aws_subnet.eks_public_subnet ]
 }
 
+resource "aws_eip" "eks_nat_eip" {
+  domain = "vpc"
+
+  tags = {
+    Name = var.eip_name
+  }
+
+  depends_on = [ aws_vpc.eks-vpc ]
+}
