@@ -62,3 +62,11 @@ variable "public-rt-name" {
 variable "eip_name" {
   
 }
+
+variable "eks_nat_gateway" {
+  
+}
+
+variable "eks_private_rt_name" {
+  
+}
