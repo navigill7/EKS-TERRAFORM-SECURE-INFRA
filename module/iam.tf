@@ -69,4 +69,34 @@ resource "aws_iam_role_policy_attachment" "eks-AmazonEC2ContainerRegistryReadOnl
   role       = aws_iam_role.eks-nodegroup-role[count.index].name
 }
 
+// IAM Role for OIDC 
+
+resource "aws_iam_role" "eks_oidc_role" {
+  assume_role_policy = data.aws_iam_policy_document.eks-oidc-document.json
+  name = "eks-oidc"
+}
+
+resource "aws_iam_policy" "eks-oidc-policy" {
+  name = "oidc-policy"
+
+  policy = jsondecode({
+    Statement = [{
+      Action = [
+        "s3:ListAllMyBuckets",
+        "s3:GetBucketLocation",
+        "*"
+      ]
+      Effect   = "Allow"
+      Resource = "*"
+    }]
+    Version = "2012-10-17"
+  })
+}
+
+
+resource "aws_iam_role_policy_attachment" "eks-oidc-policy-attach" {
+  role       = aws_iam_role.eks_oidc_role.name
+  policy_arn = aws_iam_policy.eks-oidc-policy.arn
+}
+
 
