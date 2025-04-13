@@ -133,3 +133,29 @@ resource "aws_nat_gateway" "eks_nat_gateway" {
 
   depends_on = [ aws_vpc.eks-vpc , aws_eip.eks_nat_eip ]
 }
+
+resource "aws_route_table" "eks_private_rt" {
+  vpc_id = aws_vpc.eks-vpc.id
+
+  route = {
+    cidr_block = "0.0.0.0/0"
+    gateway_id  = aws_nat_gateway.eks_nat_gateway.id
+  }
+
+  tags = {
+    Name = var.eks_private_rt_name
+    env = var.env
+  }
+
+  depends_on = [ aws_vpc.eks-vpc ]
+}
+
+resource "aws_route_table_association" "eks_private_rt_association" {
+
+  count = 3
+  route_table_id = aws_route_table.eks_private_rt.id
+
+  subnet_id = aws_subnet.eks_private_subnet[count.index].id
+
+  depends_on = [ aws_vpc.eks-vpc , aws_subnet.eks_private_subnet ] 
+}
