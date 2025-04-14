@@ -51,3 +51,43 @@ resource "aws_eks_addon" "eks_addons" {
 
 }
 
+// Node group  (ONDEMAND)
+
+resource "aws_eks_node_group" "ondemand_ng" {
+  cluster_name = aws_eks_cluster.eks[0].name
+  node_group_name = "${var.cluster-name}-ondemand-ng"
+
+  node_role_arn = aws_iam_role.eks-nodegroup-role.arn
+
+  scaling_config {
+    desired_size = var.desired_capacity_ondemand
+    min_size = var.min_capacity_ondemand
+    max_size = var.max_capacity_ondemand
+  }
+
+  subnet_ids = [aws_subnet.eks_private_subnet[0].id , aws_subnet.eks_private_subnet[1].id , aws_subnet.eks_private_subnet[2].id ]
+
+  instance_types = var.ondemand_instance_type
+
+  capacity_type = "ON_DEMAND"
+
+  labels = {
+    type = "ondemand"
+  }
+
+  update_config {
+    max_unavailable = 1
+  }
+
+  tags = {
+    Name = "${var.cluster-name}-ondemand-ng"
+  }
+
+  depends_on = [ aws_eks_cluster.eks ]
+
+
+}
+
+
+
+
