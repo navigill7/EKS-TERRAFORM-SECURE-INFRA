@@ -19,12 +19,9 @@ resource "aws_internet_gateway" "eks_internet_gateway" {
     "kubernetes.io/cluster/${local.cluster-name}" = "owned"
   }
 
-
   depends_on = [ aws_vpc.eks-vpc ]
 
-
 }
-
 
 resource "aws_subnet" "eks_public_subnet" {
   count = var.eks_public_subnet_count
@@ -43,7 +40,6 @@ resource "aws_subnet" "eks_public_subnet" {
 
   depends_on = [ aws_vpc.eks-vpc ]
 }
-
 
 resource "aws_subnet" "eks_private_subnet" {
   count = var.eks_private_subnet_count
@@ -66,7 +62,7 @@ resource "aws_subnet" "eks_private_subnet" {
 resource "aws_route_table" "eks_public_rt" {
   vpc_id = aws_vpc.eks-vpc.id
 
-  route = {
+  route  {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.eks_internet_gateway.id
   }
@@ -76,7 +72,6 @@ resource "aws_route_table" "eks_public_rt" {
     env = var.env
 
   }
-
 
   depends_on = [ aws_vpc.eks-vpc ]
 }
@@ -100,7 +95,6 @@ resource "aws_eip" "eks_nat_eip" {
   depends_on = [ aws_vpc.eks-vpc ]
 }
 
-
 resource "aws_nat_gateway" "eks_nat_gateway" {
   allocation_id = aws_eip.eks_nat_eip.id
   subnet_id = aws_subnet.eks_public_subnet[0].id
@@ -116,7 +110,7 @@ resource "aws_nat_gateway" "eks_nat_gateway" {
 resource "aws_route_table" "eks_private_rt" {
   vpc_id = aws_vpc.eks-vpc.id
 
-  route = {
+  route  {
     cidr_block = "0.0.0.0/0"
     gateway_id  = aws_nat_gateway.eks_nat_gateway.id
   }
@@ -140,11 +134,11 @@ resource "aws_route_table_association" "eks_private_rt_association" {
 }
 
 resource "aws_security_group" "eks_security_group" {
-  
+
   name = var.eks_sg_name
   description = "Allow 443 port from jump servers only"
 
-  vpc_id = aws_vpc.eks-vpc
+  vpc_id = aws_vpc.eks-vpc.id
 
   ingress {
     from_port = 443 
@@ -164,9 +158,4 @@ resource "aws_security_group" "eks_security_group" {
     Name = var.eks_sg_name
   }
 }
-
-
-
-
-
 
