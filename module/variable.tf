@@ -99,3 +99,19 @@ variable "cluster_public_access" {
 variable "addons" {
   
 }
+
+variable "desired_capacity_ondemand" {
+  
+}
+
+variable "min_capacity_ondemand" {
+  
+}
+
+variable "max_capacity_ondemand" {
+  
+}
+
+variable "ondemand_instance_type" {
+  
+}
