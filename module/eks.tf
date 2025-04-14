@@ -33,3 +33,21 @@ resource "aws_iam_openid_connect_provider" "eks_oidc_provider" {
 
   url = data.tls_certificate.eks-certificate.url 
 }
+
+
+// Addons for implemeting the networking solutions and installing other important component like kube proxy 
+
+resource "aws_eks_addon" "eks_addons" {
+  for_each = {for idx , addons in var.addons : idx => addons }
+
+  cluster_name =  aws_eks_cluster.eks[0].name
+  addon_name = each.value.name
+  addon_version = each.value.version
+
+   depends_on = [
+    aws_eks_node_group.ondemand-node,
+    aws_eks_node_group.spot-node
+  ]
+
+}
+
