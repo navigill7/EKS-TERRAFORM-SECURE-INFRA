@@ -115,3 +115,22 @@ variable "max_capacity_ondemand" {
 variable "ondemand_instance_type" {
   
 }
+
+// spot node group
+
+variable "desired_capacity_spot_node" {
+  
+}
+
+variable "min_capacity_spot_node" {
+  
+}
+
+variable "max_capacity_spot_node" {
+  
+}
+
+variable "spot_instance_type" {
+  
+}
+
