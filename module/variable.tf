@@ -24,20 +24,20 @@ variable "eks_public_subnet_count" {
 }
 
 variable "pub_cidr_block" {
-  
+  type = list(string)
 
 }
 
 variable "private_cidr_block" {
-  
+    type = list(string)
 }
 
 variable "pub_az" {
-  
+  type = list(string)
 }
 
 variable "pri-az" {
-  
+  type = list(string)
 }
 
 
@@ -53,7 +53,6 @@ variable "pri_sub_name" {
 variable "eks_private_subnet_count" {
   
 }
-
 
 variable "public-rt-name" {
   
@@ -71,12 +70,19 @@ variable "eks_private_rt_name" {
   
 }
 
-// iam role and policy 
-
-variable "is_eks_role_enabled" {
+variable "eks_sg_name" {
   
 }
 
+// iam role and policy 
+
+variable "is_eks_role_enabled" {
+    type = bool  
+}
+
+variable "is_eks_nodegroup_role_enabled" {
+  type = bool
+}
 
 // eks 
 
@@ -96,13 +102,17 @@ variable "cluster_public_access" {
   
 }
 
-// eks addons
+// for addons 
 
 variable "addons" {
+    type = list(object({
+      name = string
+      version = string 
+    }))
   
 }
 
-// ondemand nodegroup 
+// ondemand ng
 
 variable "desired_capacity_ondemand" {
   
