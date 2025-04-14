@@ -3,6 +3,7 @@ region = "us-east-1"
 vpc_name = "eks_vpc"
 igw_name = "igw"
 eks_public_subnet_count = 3
+eks_private_subnet_count = 3
 pub_cidr_block = [ "10.16.0.0/20" , "10.16.16.0/20" , "10.16.32.0/20" ]
 pub_az = [ "us-east-1a" , "us-east-1b" , "us.east-1c" ]
 pub_sub_name = "eks-public-subnet"
@@ -12,8 +13,11 @@ pri_sub_name = "eks-private-subnet"
 eip_name = "eks-nat-eip"
 eks_nat_gateway = "eks-ngw"
 eks_sg_name = "eks-sg-name"
-
-
+eks_private_rt_name = "eks_private_rt"
+cidr_block = "10.16.0.0/16"
+is_eks_nodegroup_role_enabled = true
+is_eks_role_enabled = true
+public-rt-name = "eks_public_rt"
 // eks variables 
 
 is_eks_cluster_enabled = true
