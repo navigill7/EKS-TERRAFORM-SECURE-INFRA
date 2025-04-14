@@ -95,3 +95,7 @@ variable "cluster_private_access" {
 variable "cluster_public_access" {
   
 }
+
+variable "addons" {
+  
+}
