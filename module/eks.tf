@@ -91,3 +91,44 @@ resource "aws_eks_node_group" "ondemand_ng" {
 
 
 
+// Node Group ( on spot )
+
+resource "aws_eks_node_group" "eks_spot_node" {
+  
+  cluster_name = aws_eks_cluster.eks[0].name
+  node_group_name = "${var.cluster-name}--eks-spot-node"
+  node_role_arn = aws_iam_role.eks-nodegroup-role[0].arn
+
+  scaling_config {
+    desired_size = var.desired_capacity_spot_node
+    min_size = var.min_capacity_spot_node
+    max_size = var.max_capacity_spot_node
+  }
+
+
+  subnet_ids = [aws_subnet.eks_private_subnet[0].id , aws_subnet.eks_private_subnet[1].id , aws_subnet.eks_private_subnet[2].id ]
+
+  instance_types = var.spot_instance_type
+
+  capacity_type = "SPOT"
+
+  update_config {
+    max_unavailable = 1
+
+  }
+
+  tags = {
+    "Name" = "${var.cluster-name}-spot-nodes"
+  }
+
+  labels = {
+    type = "spot"
+    lifecycle = "spot"
+  }
+
+  disk_size = 50
+
+  depends_on = [ aws_eks_cluster.eks ]
+}
+
+
