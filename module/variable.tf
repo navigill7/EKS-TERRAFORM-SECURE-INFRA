@@ -76,3 +76,22 @@ variable "eks_private_rt_name" {
 variable "is_eks_role_enabled" {
   
 }
+
+
+// eks 
+
+variable "is_eks_cluster_enabled" {
+  
+}
+
+variable "kubernetes_version" {
+  
+}
+
+variable "cluster_private_access" {
+  
+}
+
+variable "cluster_public_access" {
+  
+}
