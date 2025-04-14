@@ -1,0 +1,9 @@
+env = "dev"
+region = "us-east-1"
+vpc_name = "eks_vpc"
+igw_name = "igw"
+eks_public_subnet_count = 3
+pub_cidr_block = [ "10.16.0.0/20" , "10.16.16.0/20" , "10.16.32.0/20" ]
+pub_az = [ "us-east-1a" , "us-east-1b" , "us.east-1c" ]
+pub_sub_name = "eks-public-subnet"
+pri-az = [ "" ]
