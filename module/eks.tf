@@ -1,7 +1,7 @@
 resource "aws_eks_cluster" "eks" {
   count = var.is_eks_cluster_enabled == true ? 1 : 0 
   name = var.cluster-name
-  role_arn = aws_iam_role.eks_oidc_role.arn
+  role_arn = aws_iam_role.eks_cluster_role[count.index].arn
 
   version = var.kubernetes_version
 
@@ -23,17 +23,15 @@ resource "aws_eks_cluster" "eks" {
   }
 }
 
-
 // OIDC provider 
 
 resource "aws_iam_openid_connect_provider" "eks_oidc_provider" {
   
   client_id_list = ["sts.amazonaws.com"]
-  thumbprint_list = [data.tls_certificate.eks-certificate[0].sha1_fingerprint]
+  thumbprint_list = [data.tls_certificate.eks-certificate.certificates[0].sha1_fingerprint]
 
   url = data.tls_certificate.eks-certificate.url 
 }
-
 
 // Addons for implemeting the networking solutions and installing other important component like kube proxy 
 
@@ -45,8 +43,8 @@ resource "aws_eks_addon" "eks_addons" {
   addon_version = each.value.version
 
    depends_on = [
-    aws_eks_node_group.ondemand-node,
-    aws_eks_node_group.spot-node
+    aws_eks_node_group.eks_spot_node,
+    aws_eks_node_group.ondemand_ng
   ]
 
 }
@@ -57,7 +55,7 @@ resource "aws_eks_node_group" "ondemand_ng" {
   cluster_name = aws_eks_cluster.eks[0].name
   node_group_name = "${var.cluster-name}-ondemand-ng"
 
-  node_role_arn = aws_iam_role.eks-nodegroup-role.arn
+  node_role_arn = aws_iam_role.eks_nodegroup_role[0].arn
 
   scaling_config {
     desired_size = var.desired_capacity_ondemand
@@ -88,16 +86,13 @@ resource "aws_eks_node_group" "ondemand_ng" {
 
 }
 
-
-
-
 // Node Group ( on spot )
 
 resource "aws_eks_node_group" "eks_spot_node" {
   
   cluster_name = aws_eks_cluster.eks[0].name
   node_group_name = "${var.cluster-name}--eks-spot-node"
-  node_role_arn = aws_iam_role.eks-nodegroup-role[0].arn
+  node_role_arn = aws_iam_role.eks_nodegroup_role[0].arn
 
   scaling_config {
     desired_size = var.desired_capacity_spot_node
