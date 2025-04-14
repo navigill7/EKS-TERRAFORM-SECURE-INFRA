@@ -96,9 +96,13 @@ variable "cluster_public_access" {
   
 }
 
+// eks addons
+
 variable "addons" {
   
 }
+
+// ondemand nodegroup 
 
 variable "desired_capacity_ondemand" {
   
