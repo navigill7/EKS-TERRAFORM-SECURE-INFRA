@@ -1,10 +1,6 @@
 variable "region" {
   type = string
 }
-variable "region" {
-  type = string
-}
-
 variable "cluster-name" {
     type = string
     default = "eks-infra"
