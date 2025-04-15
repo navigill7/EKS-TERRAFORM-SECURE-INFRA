@@ -1,0 +1,66 @@
+name: 'eks_workflow'
+
+on:
+  workflow_dispatch:
+    inputs:
+      tfvars_file:
+        description: 'Path to the tfvars file'
+        required: true
+        default: 'variable.tfvars'
+      action:
+        type: choice
+        description: 'plan | apply | destroy'
+        options:
+          - plan
+          - apply
+          - destroy
+        required: true
+        default: 'apply'
+
+env:
+  AWS_REGION: us-east-1
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+permissions:
+  contents: read
+
+jobs:
+  Terraform:
+    runs-on: ubuntu-latest
+    environment: production
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: eks
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.8.4
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Format
+        run: terraform fmt
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        if: ${{ github.event.inputs.action == 'plan' }}
+        run: terraform plan -var-file=${{ github.event.inputs.tfvars_file }} -input=false
+
+      - name: Terraform Apply
+        if: ${{ github.event.inputs.action == 'apply' }}
+        run: terraform apply -auto-approve -var-file=${{ github.event.inputs.tfvars_file }} -input=false
+
+      - name: Terraform Destroy
+        if: ${{ github.event.inputs.action == 'destroy' }}
+        run: terraform destroy -auto-approve -var-file=${{ github.event.inputs.tfvars_file }} -input=false
