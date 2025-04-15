@@ -1,5 +1,5 @@
 variable "cluster-name" {
-    type = "String"
+    type = string
     default = "eks-infra"
 }
 
