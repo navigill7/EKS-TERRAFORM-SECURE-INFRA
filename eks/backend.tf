@@ -9,17 +9,22 @@ terraform {
   }
 
   backend "s3" {
-    bucket = "eks-backend-state-bucket"
-    region = "us-east-1"
-    key = "eks/terraform.tfstate"
+    bucket         = "eks-backend-state-bucket"
+    region         = "us-east-1"
+    key            = "eks/terraform.tfstate"
     dynamodb_table = "Lock_Files"
-    encrypt = true
+    encrypt        = true
   }
 
 
 }
 
 provider "aws" {
-    region = var.region
+  region = var.region
 }
 
+provider "helm" {
+  kubernetes {
+    config_path = "~/.kube/config"
+  }
+}
