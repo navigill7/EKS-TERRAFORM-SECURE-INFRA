@@ -9,7 +9,7 @@ on:
 
 env:
   ECR_REPO_NAME: "development"
-  ECR_REGISTRY: "221082179535.dkr.ecr.us-east-1.amazonaws.com/development"
+  ECR_REGISTRY: "221082179535.dkr.ecr.us-east-1.amazonaws.com"
 
 jobs:
   build-and-push-ecr:
