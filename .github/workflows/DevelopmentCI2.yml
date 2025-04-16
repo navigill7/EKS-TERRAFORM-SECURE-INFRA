@@ -8,21 +8,17 @@ on:
       - 'Development/**'
 
 env:
-<<<<<<< HEAD
-  DOCKER_IMAGE: "" 
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: development
+  AWS_ACCOUNT_ID: ${{secrets.AWS_ACCOUNT_ID}}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  IMAGE_TAG: ${{ github.sha }}
+  DOCKER_IMAGE: ""  
   ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
   ARGOCD_USERNAME: ${{ secrets.ARGOCD_USERNAME }}
   ARGOCD_PASSWORD: ${{ secrets.ARGOCD_PASSWORD }}
   APP_NAME: demo.com
-=======
-  AWS_REGION: us-east-1
-  ECR_REPOSITORY: development
-  AWS_ACCOUNT_ID: 221082179535
-  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  IMAGE_TAG: ${{ github.sha }}
-  DOCKER_IMAGE: ""  # Will be set dynamically
->>>>>>> 81ee7c6223453ca05aa3f03bccca06133113fa37
 
 jobs:
   build-and-push-ecr:
@@ -37,9 +33,7 @@ jobs:
 
       - name: Set Docker image name
         run: |
-          # Set the short SHA for the Docker image tag
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
-          # Set the DOCKER_IMAGE environment variable with the name and tag (repo:short_sha)
           echo "DOCKER_IMAGE=${{ env.ECR_REPOSITORY }}:${SHORT_SHA}" >> $GITHUB_ENV
           echo "Docker image name: ${{ env.DOCKER_IMAGE }}"
 
@@ -48,9 +42,8 @@ jobs:
           aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws configure set region ${{ env.AWS_REGION }}
-          # Get login password and authenticate Docker with ECR
           aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
-            
+
       - name: Build Docker image
         run: |
           docker build -t "${{ env.DOCKER_IMAGE }}" ./Development
@@ -58,51 +51,30 @@ jobs:
 
       - name: Tag Docker image for ECR
         run: |
-          # ECR image full path
           ECR_IMAGE="${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}"
           echo "ECR_IMAGE=$ECR_IMAGE" >> $GITHUB_ENV
-          # Tag the Docker image for ECR
           docker tag "${{ env.DOCKER_IMAGE }}" "$ECR_IMAGE"
-          echo "Docker image tagged as: $ECR_IMAGE"
 
       - name: Push Docker image to ECR
         run: |
-          # Push the image to the ECR repository
           docker push "${{ env.ECR_IMAGE }}"
           echo "Docker push complete."
-      
-      - name: Install Argo CD CLI
+
+      - name: Install ArgoCD CLI 
         run: |
           curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
           chmod +x argocd
           sudo mv argocd /usr/local/bin/argocd
 
-<<<<<<< HEAD
-      - name: Install ArgoCd Cli 
-        run: |
-          curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
-          chmod +x argocd
-          sudo mv argocd /usr/local/bin/argocd
-      
       - name: Login to ArgoCD
         run: |
           argocd login $ARGOCD_SERVER \
             --username $ARGOCD_USERNAME \
             --password $ARGOCD_PASSWORD \
             --insecure
-      
-      - name: Generate Token
+
+      - name: Generate ArgoCD token
         id: token
         run: |
           TOKEN=$(argocd account generate-token)
           echo "ARGOCD_TOKEN=$TOKEN" >> $GITHUB_ENV
-
-      - name: Trigger ArgoCD Sync 
-        run: | 
-           curl -k -X POST \
-            -H "Authorization: Bearer $ARGOCD_TOKEN" \
-            $ARGOCD_SERVER/api/v1/applications/$APP_NAME/sync
-
-=======
-
->>>>>>> 81ee7c6223453ca05aa3f03bccca06133113fa37
