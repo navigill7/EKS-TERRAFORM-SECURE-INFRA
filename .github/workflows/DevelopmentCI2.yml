@@ -59,27 +59,35 @@ jobs:
         run: |
           docker push "${{ env.ECR_IMAGE }}"
           echo "Docker push complete."
+      
 
-      - name: Install ArgoCD CLI 
+      
+      - name: Install ArgoCd Cli 
         run: |
-          curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
-          chmod +x argocd
-          sudo mv argocd /usr/local/bin/argocd
-
+           curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+           chmod +x argocd
+           sudo mv argocd /usr/local/bin/argocd
+       
       - name: Login to ArgoCD
         run: |
            argocd login $ARGOCD_SERVER \
              --username $ARGOCD_USERNAME \
              --password $ARGOCD_PASSWORD \
-             --insecure      
-    
-      - name: Generate ArgoCD token
+             --insecure
+       
+      - name: Generate Token
         id: token
         run: |
-          TOKEN=$(argocd account generate-token)
-          echo "ARGOCD_TOKEN=$TOKEN" >> $GITHUB_ENV
+           TOKEN=$(argocd account generate-token)
+           echo "ARGOCD_TOKEN=$TOKEN" >> $GITHUB_ENV
+ 
+      - name: Trigger ArgoCD Sync 
+        run: | 
+            curl -k -X POST \
+             -H "Authorization: Bearer $ARGOCD_TOKEN" \
+             $ARGOCD_SERVER/api/v1/applications/$APP_NAME/sync
+ 
 
-      
       - name: Save image tag to file
         run: |
           echo "${{ env.IMAGE_TAG }}" > image_tag.txt
@@ -89,11 +97,6 @@ jobs:
         with:
           name: image-tag
           path: image_tag.txt   
-
-
-      
-
-
 
 
 
