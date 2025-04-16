@@ -2,7 +2,7 @@ replicaCount: 2
 
 image:
   repository: 221082179535.dkr.ecr.us-east-1.amazonaws.com/development
-  tag: 81ee7c6223453ca05aa3f03bccca06133113fa37
+  tag: 002f059aa4240fbe2c5a499146ad16cf504c72e8
   pullPolicy: IfNotPresent
 
 service:
