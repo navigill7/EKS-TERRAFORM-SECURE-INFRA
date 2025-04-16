@@ -1,0 +1,13 @@
+replicaCount: 2
+
+image:
+  repository: 221082179535.dkr.ecr.us-east-1.amazonaws.com/development
+  tag: 81ee7c6223453ca05aa3f03bccca06133113fa37
+  pullPolicy: IfNotPresent
+
+service:
+  type: LoadBalancer
+  port: 80
+  targetPort: 80
+
+resources: {}
