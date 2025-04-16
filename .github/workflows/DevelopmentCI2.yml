@@ -27,7 +27,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ${{ env.DOCKER_IMAGE }} ./devops-portfolio
+          docker build -t ${{ env.DOCKER_IMAGE }} ./Development
 
       - name: Run Docker container
         run: |
