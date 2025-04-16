@@ -10,7 +10,7 @@ data:
         <title>Welcome to EKS</title>
     </head>
     <body>
-        <h1>🚀 Hello from your EKS static site!</h1>
+        <h1>Hello Navi this side </h1>
         <p>Served via NGINX in Kubernetes</p>
     </body>
     </html>
