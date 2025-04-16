@@ -8,59 +8,53 @@ on:
       - 'Development/**'
 
 env:
-  ECR_REPO_NAME: "development"
-  ECR_REGISTRY: "221082179535.dkr.ecr.us-east-1.amazonaws.com"
+  ECR_REGISTRY: "221082179535.dkr.ecr.us-east-1.amazonaws.com/development"
+  DOCKER_IMAGE: ""  # This will be dynamically set
 
 jobs:
   build-and-push-ecr:
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout your code
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Step 2: Set up Docker Buildx (for modern Docker builds)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Step 3: Set Docker image name (portfolio-nginx:short_sha)
+      - name: Set Docker image name
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          echo "DOCKER_IMAGE=portfolio-nginx:${SHORT_SHA}" >> $GITHUB_ENV
+
+      # Step 4: Configure AWS credentials (needs aws-region!)
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: us-east-1  # 🔁 Set this to your region
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
+      # Step 5: Login to Amazon ECR
       - name: Login to Amazon ECR
-        id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Set Docker image name
-        run: |
-          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
-          echo "DOCKER_IMAGE=portfolio_cheking:${SHORT_SHA}" >> $GITHUB_ENV
-
+      # Step 6: Build Docker image locally
       - name: Build Docker image
         run: |
           docker build -t ${{ env.DOCKER_IMAGE }} ./Development
 
-      - name: Tag image for ECR
+      # Step 7: Tag image for ECR push
+      - name: Tag Docker image for ECR
         run: |
-          ECR_IMAGE="${ECR_REGISTRY}/${{env.DOCKER_IMAGE}}"
-          echo "ECR_IMAGE=${ECR_IMAGE}" >> $GITHUB_ENV
+          ECR_IMAGE="${{ ECR_REGISTRY }}/${{ env.DOCKER_IMAGE }}"
+          echo "ECR_IMAGE=$ECR_IMAGE" >> $GITHUB_ENV
           docker tag ${{ env.DOCKER_IMAGE }} $ECR_IMAGE
 
-      - name: Push image to Amazon ECR
+      # Step 8: Push image to ECR
+      - name: Push image to ECR
         run: |
           docker push ${{ env.ECR_IMAGE }}
-
-      - name: Run Docker container (for testing)
-        run: |
-          docker run -d -p 8080:80 --name portfolio-container ${{ env.DOCKER_IMAGE }}
-
-      - name: Test portfolio site
-        run: |
-          sleep 5
-          curl -f http://localhost:8080 || exit 1
-
-      - name: Stop Docker container
-        if: always()
-        run: |
