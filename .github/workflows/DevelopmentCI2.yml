@@ -65,6 +65,13 @@ jobs:
           curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
           chmod +x argocd
           sudo mv argocd /usr/local/bin/argocd
+
+      - name: Login to ArgoCD
+        run: |
+           argocd login $ARGOCD_SERVER \
+             --username $ARGOCD_USERNAME \
+             --password $ARGOCD_PASSWORD \
+             --insecure      
     
       - name: Generate ArgoCD token
         id: token
