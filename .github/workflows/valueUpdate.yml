@@ -1,0 +1,40 @@
+name: UpdateValues 
+
+on:
+  workflow_run:
+    workflows: ["DevelopmentCI2"]   # 👈 Must match the name: in your first workflow
+    types:
+      - completedu can also trigger this on `push` or another workflow
+
+jobs:
+  update-values-file:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download image tag artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: image-tag
+
+      - name: Read image tag and export as env
+        id: tag
+        run: |
+          IMAGE_TAG=$(cat image_tag.txt)
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+          echo "Using image tag: $IMAGE_TAG"
+
+      - name: Update values.yaml file
+        run: |
+          sed -i "s|\(tag: \).*|\1${{ env.IMAGE_TAG }}|" Deployments/values.yaml
+          echo "Updated image tag in values.yaml to: ${{ env.IMAGE_TAG }}"
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add Deployments/values.yaml
+          git commit -m "chore: update image tag in values.yaml to ${{ env.IMAGE_TAG }}"
+          git push
