@@ -7,10 +7,7 @@ terraform {
       version = "~> 5.49.0"
     }
 
-    helm = {
-       source  = "hashicorp/helm"
-       version = "= 2.5.1"
-    }
+   
   }
 
   backend "s3" {
@@ -28,8 +25,4 @@ provider "aws" {
   region = var.region
 }
 
-provider "helm" {
-  kubernetes {
-    config_path = "~/.kube/config"
-  }
-}
+
