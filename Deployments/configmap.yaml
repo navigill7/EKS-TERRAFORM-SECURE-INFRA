@@ -10,7 +10,7 @@ data:
         <title>Welcome to EKS</title>
     </head>
     <body>
-        <h1>Hello Navi this side </h1>
+        <h1>Hello Navi this side from Bennett  </h1>
         <p>Served via NGINX in Kubernetes</p>
     </body>
     </html>
