@@ -66,6 +66,503 @@ jobs:
           chmod +x argocd
           sudo mv argocd /usr/local/bin/argocd
 
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt
+
+      
       - name: Login to ArgoCD
         run: |
           argocd login $ARGOCD_SERVER \
@@ -73,8 +570,89 @@ jobs:
             --password $ARGOCD_PASSWORD \
             --insecure
 
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt   
+      
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt   
+      
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt   
+      
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt   
+      
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt   
+      
       - name: Generate ArgoCD token
         id: token
         run: |
           TOKEN=$(argocd account generate-token)
           echo "ARGOCD_TOKEN=$TOKEN" >> $GITHUB_ENV
+
+
+      - name: Save image tag to file
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+
+      - name: Upload image tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-tag
+          path: image_tag.txt   
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          
