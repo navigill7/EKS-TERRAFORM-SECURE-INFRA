@@ -1,9 +1,11 @@
 name: DevelopmentCI2
 
 on:
-   push:
-     branches:
-       - development
+  push:
+    branches:
+      - main
+    paths:
+      - 'Deployments/**'  
 env:
   DOCKER_IMAGE: ""  # Initialize DOCKER_IMAGE, to be updated later
 
