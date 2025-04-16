@@ -2,7 +2,7 @@ name: Update Values
 
 on:
   workflow_run:
-    workflows: ["DevelopmentCI2"]  # Make sure this exactly matches the name: field in the source workflow
+    workflows: ["DevelopmentCI2"]
     types:
       - completed
 
@@ -11,19 +11,30 @@ permissions:
   contents: read
 
 jobs:
-  download-image-tag:
+  fetch-artifact:
     runs-on: ubuntu-latest
 
     steps:
       - name: Download image-tag artifact
         uses: actions/download-artifact@v4
         with:
-          name: image-tag  # must match the uploaded artifact name exactly
+          name: image-tag  # must match artifact name
+          path: ./artifact  # optional, useful for checking folder output
 
-      - name: Print image tag
+      - name: Print contents
         run: |
-          echo "Downloaded tag:"
-          cat image_tag.txt
+          echo "Image tag is:"
+          cat ./artifact/image_tag.txt
+
+
+
+
+
+
+
+
+
+
 
       - name: Read image tag and export as env
         id: tag
