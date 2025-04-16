@@ -1,7 +1,7 @@
 FROM nginx:1.27.4-alpine
 RUN mkdir -p /var/Development
 # Copy portfolio site
-COPY ./Development/index.html /var/Development/index.html
+COPY index.html /var/Development/index.html
 # Copy Nginx configuration
 COPY default.conf /etc/nginx/conf.d/default.conf
 # Set permissions and ownership
