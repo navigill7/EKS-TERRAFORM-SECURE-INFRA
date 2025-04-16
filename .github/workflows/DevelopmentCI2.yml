@@ -30,7 +30,7 @@ jobs:
       - name: Set Docker image name
         run: |
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
-          echo "DOCKER_IMAGE=portfolio-nginx:${SHORT_SHA}" >> $GITHUB_ENV
+          echo "DOCKER_IMAGE=${SHORT_SHA}" >> $GITHUB_ENV
 
       - name: Login to Amazon ECR using AWS CLI
         run: |
