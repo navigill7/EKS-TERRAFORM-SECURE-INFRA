@@ -29,11 +29,11 @@ provider "aws" {
 }
 
 data "aws_eks_cluster" "eks" {
-  name = aws_eks_cluster.eks[0].name
+  name = module.cluster_name
 }
 
 data "aws_eks_cluster_auth" "eks" {
-  name = aws_eks_cluster.eks[0].name
+  name = module.cluster_name
 }
 
 provider "helm" {
