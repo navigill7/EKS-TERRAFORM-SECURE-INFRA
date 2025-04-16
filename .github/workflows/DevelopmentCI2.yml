@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'Deployments/**'  
+      - 'Development/**'  
 env:
   DOCKER_IMAGE: ""  # Initialize DOCKER_IMAGE, to be updated later
 
