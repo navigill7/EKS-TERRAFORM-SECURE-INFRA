@@ -4,7 +4,7 @@ on:
   workflow_run:
     workflows: ["DevelopmentCI2"]   # 👈 Must match the name: in your first workflow
     types:
-      - completedu can also trigger this on `push` or another workflow
+      - completed
 
 jobs:
   update-values-file:
