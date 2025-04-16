@@ -29,10 +29,10 @@ jobs:
 
       - name: Set Docker image name
         run: |
-          # Use a user-friendly tag format, e.g., v1.0.0-short_SHA
+          # Set the short SHA for the Docker image tag
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
-          VERSION="v1.0.0"  # You can adjust this version or make it dynamic based on tags
-          echo "DOCKER_IMAGE=${{ env.ECR_REPOSITORY }}:${VERSION}-${SHORT_SHA}" >> $GITHUB_ENV
+          # Set the DOCKER_IMAGE environment variable with the name and tag (repo:short_sha)
+          echo "DOCKER_IMAGE=${{ env.ECR_REPOSITORY }}:${SHORT_SHA}" >> $GITHUB_ENV
           echo "Docker image name: ${{ env.DOCKER_IMAGE }}"
 
       - name: Login to Amazon ECR using AWS CLI
@@ -51,7 +51,7 @@ jobs:
       - name: Tag Docker image for ECR
         run: |
           # ECR image full path
-          ECR_IMAGE="${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ env.DOCKER_IMAGE }}"
+          ECR_IMAGE="${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}"
           echo "ECR_IMAGE=$ECR_IMAGE" >> $GITHUB_ENV
           # Tag the Docker image for ECR
           docker tag "${{ env.DOCKER_IMAGE }}" "$ECR_IMAGE"
