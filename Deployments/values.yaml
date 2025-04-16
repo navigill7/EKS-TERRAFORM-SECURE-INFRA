@@ -1,0 +1,13 @@
+replicaCount: 2
+
+image:
+  repository: YOUR_DOCKERHUB_USERNAME/portfolio
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: LoadBalancer
+  port: 80
+  targetPort: 80
+
+resources: {}

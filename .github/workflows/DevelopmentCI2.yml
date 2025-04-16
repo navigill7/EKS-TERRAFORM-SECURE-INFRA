@@ -8,6 +8,13 @@ on:
       - 'Development/**'
 
 env:
+<<<<<<< HEAD
+  DOCKER_IMAGE: "" 
+  ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+  ARGOCD_USERNAME: ${{ secrets.ARGOCD_USERNAME }}
+  ARGOCD_PASSWORD: ${{ secrets.ARGOCD_PASSWORD }}
+  APP_NAME: demo.com
+=======
   AWS_REGION: us-east-1
   ECR_REPOSITORY: development
   AWS_ACCOUNT_ID: 221082179535
@@ -15,6 +22,7 @@ env:
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   IMAGE_TAG: ${{ github.sha }}
   DOCKER_IMAGE: ""  # Will be set dynamically
+>>>>>>> 81ee7c6223453ca05aa3f03bccca06133113fa37
 
 jobs:
   build-and-push-ecr:
@@ -69,3 +77,32 @@ jobs:
           chmod +x argocd
           sudo mv argocd /usr/local/bin/argocd
 
+<<<<<<< HEAD
+      - name: Install ArgoCd Cli 
+        run: |
+          curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          chmod +x argocd
+          sudo mv argocd /usr/local/bin/argocd
+      
+      - name: Login to ArgoCD
+        run: |
+          argocd login $ARGOCD_SERVER \
+            --username $ARGOCD_USERNAME \
+            --password $ARGOCD_PASSWORD \
+            --insecure
+      
+      - name: Generate Token
+        id: token
+        run: |
+          TOKEN=$(argocd account generate-token)
+          echo "ARGOCD_TOKEN=$TOKEN" >> $GITHUB_ENV
+
+      - name: Trigger ArgoCD Sync 
+        run: | 
+           curl -k -X POST \
+            -H "Authorization: Bearer $ARGOCD_TOKEN" \
+            $ARGOCD_SERVER/api/v1/applications/$APP_NAME/sync
+
+=======
+
+>>>>>>> 81ee7c6223453ca05aa3f03bccca06133113fa37
