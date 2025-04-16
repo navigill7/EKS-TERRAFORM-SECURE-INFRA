@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: static-site-html
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Welcome to EKS</title>
+    </head>
+    <body>
+        <h1>🚀 Hello from your EKS static site!</h1>
+        <p>Served via NGINX in Kubernetes</p>
+    </body>
+    </html>
