@@ -27,11 +27,14 @@ jobs:
     needs: build-and-push-ecr
 
     steps:
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-        
+          fetch-depth: 0  # Fetch full history to avoid issues with Git operations
+          ssh-key: ${{ secrets.PRIVATE}}  # Use SSH key for checkout
+          repository: ${{ github.repository }}
+    
       - name: Download image-tag artifact
         uses: actions/download-artifact@v4
         with:
@@ -42,6 +45,13 @@ jobs:
           echo "Downloaded image tag:"
           cat image_tag.txt
 
+      - name: Setup SSH for Git
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PRIVATE }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          git config --global url."git@github.com:".insteadOf "https://github.com/"
 
       - name: Update values.yaml file
         run: |
@@ -51,12 +61,11 @@ jobs:
       - name: Commit and push changes
         run: |
           git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
+          git config user.email "github-actions@github.com"  
           git add Deployments/values.yaml
-          git commit -m "chore: update image tag in values.yaml to ${{ env.IMAGE_TAG }}" || echo "Nothing to commit"
-          git push origin HEAD:main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          git commit -m "chore: update image tag in values.yaml to ${{ env.IMAGE_TAG }}"
+          git push git@github.com:${{ github.repository }}.git HEAD:main
+        
 
   build-and-push-ecr:
     runs-on: ubuntu-latest
