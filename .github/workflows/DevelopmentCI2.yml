@@ -5,41 +5,62 @@ on:
     branches:
       - main
     paths:
-      - 'Development/**'  
+      - 'Development/**'
+
 env:
-  DOCKER_IMAGE: ""  # Initialize DOCKER_IMAGE, to be updated later
+  ECR_REPO_NAME: "development"
+  ECR_REGISTRY: "221082179535.dkr.ecr.us-east-1.amazonaws.com/development"
 
 jobs:
-  build-and-test:
+  build-and-push-ecr:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
       - name: Set Docker image name
         run: |
           SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
-          echo "DOCKER_IMAGE=portfolio-nginx:${SHORT_SHA}" >> $GITHUB_ENV
+          echo "DOCKER_IMAGE=portfolio_cheking:${SHORT_SHA}" >> $GITHUB_ENV
 
       - name: Build Docker image
         run: |
           docker build -t ${{ env.DOCKER_IMAGE }} ./Development
 
-      - name: Run Docker container
+      - name: Tag image for ECR
+        run: |
+          ECR_IMAGE="${ECR_REGISTRY}/${{env.DOCKER_IMAGE}}"
+          echo "ECR_IMAGE=${ECR_IMAGE}" >> $GITHUB_ENV
+          docker tag ${{ env.DOCKER_IMAGE }} $ECR_IMAGE
+
+      - name: Push image to Amazon ECR
+        run: |
+          docker push ${{ env.ECR_IMAGE }}
+
+      - name: Run Docker container (for testing)
         run: |
           docker run -d -p 8080:80 --name portfolio-container ${{ env.DOCKER_IMAGE }}
 
       - name: Test portfolio site
         run: |
-          sleep 5  # Wait for container to start
-          curl -f http://localhost:8080 || exit 1  # Fail if site is not accessible
+          sleep 5
+          curl -f http://localhost:8080 || exit 1
 
       - name: Stop Docker container
         if: always()
         run: |
-          docker stop portfolio-container
-          docker rm -f portfolio-container
