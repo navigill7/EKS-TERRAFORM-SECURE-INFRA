@@ -62,3 +62,10 @@ jobs:
           # Push the image to the ECR repository
           docker push "${{ env.ECR_IMAGE }}"
           echo "Docker push complete."
+      
+      - name: Install Argo CD CLI
+        run: |
+          curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          chmod +x argocd
+          sudo mv argocd /usr/local/bin/argocd
+
