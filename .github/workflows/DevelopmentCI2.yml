@@ -73,24 +73,24 @@ jobs:
           echo "ARGOCD_SERVER=${{ env.ARGOCD_SERVER }}"
 
        
-      - name: Login to ArgoCD
-        run: |
-           argocd login $ARGOCD_SERVER \
-             --username $ARGOCD_USERNAME \
-             --password $ARGOCD_PASSWORD \
-             --insecure
+      # - name: Login to ArgoCD
+      #   run: |
+      #      argocd login $ARGOCD_SERVER \
+      #        --username $ARGOCD_USERNAME \
+      #        --password $ARGOCD_PASSWORD \
+      #        --insecure
        
-      - name: Generate Token
-        id: token
-        run: |
-           TOKEN=$(argocd account generate-token)
-           echo "ARGOCD_TOKEN=$TOKEN" >> $GITHUB_ENV
+      # - name: Generate Token
+      #   id: token
+      #   run: |
+      #      TOKEN=$(argocd account generate-token)
+      #      echo "ARGOCD_TOKEN=$TOKEN" >> $GITHUB_ENV
  
-      - name: Trigger ArgoCD Sync 
-        run: | 
-            curl -k -X POST \
-             -H "Authorization: Bearer $ARGOCD_TOKEN" \
-             $ARGOCD_SERVER/api/v1/applications/$APP_NAME/sync
+      # - name: Trigger ArgoCD Sync 
+      #   run: | 
+      #       curl -k -X POST \
+      #        -H "Authorization: Bearer $ARGOCD_TOKEN" \
+      #        $ARGOCD_SERVER/api/v1/applications/$APP_NAME/sync
  
 
       - name: Save image tag to file
