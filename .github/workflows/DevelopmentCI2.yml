@@ -1,0 +1,43 @@
+name: DevelopmentCI2
+
+on:
+   push:
+     branches:
+       - development
+env:
+  DOCKER_IMAGE: ""  # Initialize DOCKER_IMAGE, to be updated later
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set Docker image name
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          echo "DOCKER_IMAGE=portfolio-nginx:${SHORT_SHA}" >> $GITHUB_ENV
+
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ env.DOCKER_IMAGE }} ./devops-portfolio
+
+      - name: Run Docker container
+        run: |
+          docker run -d -p 8080:80 --name portfolio-container ${{ env.DOCKER_IMAGE }}
+
+      - name: Test portfolio site
+        run: |
+          sleep 5  # Wait for container to start
+          curl -f http://localhost:8080 || exit 1  # Fail if site is not accessible
+
+      - name: Stop Docker container
+        if: always()
+        run: |
+          docker stop portfolio-container
+          docker rm -f portfolio-container
