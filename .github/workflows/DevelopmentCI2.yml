@@ -29,6 +29,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+        
       - name: Download image-tag artifact
         uses: actions/download-artifact@v4
         with:
@@ -50,10 +53,10 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add Deployments/values.yaml
-          git commit -m "chore: update image tag in values.yaml to ${{ env.IMAGE_TAG }}"
-          git push https://x-access-token:${{ secrets.PAT }}@github.com/${{ github.repository }}.git HEAD:main  
-
-
+          git commit -m "chore: update image tag in values.yaml to ${{ env.IMAGE_TAG }}" || echo "Nothing to commit"
+          git push origin HEAD:main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-and-push-ecr:
     runs-on: ubuntu-latest
