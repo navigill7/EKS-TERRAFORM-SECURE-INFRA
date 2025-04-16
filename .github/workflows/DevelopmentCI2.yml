@@ -67,6 +67,11 @@ jobs:
            curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
            chmod +x argocd
            sudo mv argocd /usr/local/bin/argocd
+
+      - name: Debug ArgoCD Server
+        run: |
+          echo "ARGOCD_SERVER=${{ env.ARGOCD_SERVER }}"
+
        
       - name: Login to ArgoCD
         run: |
