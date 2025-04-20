@@ -1,13 +1,17 @@
-replicaCount: 2
+frontend:
+  image:
+    repository: <your-frontend-ecr-url>
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: LoadBalancer
+    port: 80
 
-image:
-  repository: 221082179535.dkr.ecr.us-east-1.amazonaws.com/development
-  tag: 4326bfc34f5d5b3de29a21793c7ea2de2fe7d881
-  pullPolicy: IfNotPresent
-
-service:
-  type: LoadBalancer
-  port: 80
-  targetPort: 80
-
-resources: {}
+backend:
+  image:
+    repository: <your-backend-ecr-url>
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 3001
