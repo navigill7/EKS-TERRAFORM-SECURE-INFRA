@@ -1,6 +1,6 @@
 frontend:
   image:
-    repository: https://hub.docker.com/repository/docker/gillnavi/client/general
+    repository: gillnavi/client
     tag: latest
     pullPolicy: IfNotPresent
   service:
