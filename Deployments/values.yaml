@@ -5,7 +5,7 @@ frontend:
     pullPolicy: IfNotPresent
   service:
     type: LoadBalancer
-    port: 3000
+    port: 80
 
 backend:
   image:
