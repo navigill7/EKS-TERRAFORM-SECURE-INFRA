@@ -1,7 +1,7 @@
 frontend:
   image:
     repository: booraraman/frontend-image
-    tag: latest
+    tag: 
     pullPolicy: IfNotPresent
   service:
     type: LoadBalancer
