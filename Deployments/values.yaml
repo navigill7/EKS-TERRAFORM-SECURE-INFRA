@@ -1,6 +1,6 @@
 frontend:
   image:
-    repository: booraraman/frontend-image
+    repository: 221082179535.dkr.ecr.us-east-1.amazonaws.com/unilink/artifacts/client_image
     tag: latest
     pullPolicy: IfNotPresent
   service:
@@ -8,9 +8,10 @@ frontend:
     port: 80
 
 
+
 backend:
   image:
-    repository: booraraman/backend-image
+    repository: 221082179535.dkr.ecr.us-east-1.amazonaws.com/unilink/artifacts/server_image
     tag: latest
     pullPolicy: IfNotPresent
   service:
