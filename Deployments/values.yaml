@@ -14,4 +14,4 @@ backend:
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
-    port: 3001
+    port: 5000
