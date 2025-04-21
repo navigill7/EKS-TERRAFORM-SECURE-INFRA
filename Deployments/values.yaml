@@ -1,6 +1,6 @@
 frontend:
   image:
-    repository: gillnavi/client
+    repository: 221082179535.dkr.ecr.us-east-1.amazonaws.com/unilink/artifacts/client_image
     tag: latest
     pullPolicy: IfNotPresent
   service:
