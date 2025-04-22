@@ -69,6 +69,7 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"  
+          git pull --rebase origin main
           git add Deployments/values.yaml
           git commit -m "chore: update image tag in values.yaml to ${{ env.IMAGE_TAG }}"
           git push git@github.com:${{ github.repository }}.git HEAD:main
