@@ -6,18 +6,18 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://helm.elastic.co'
+    repoURL: https://helm.elastic.co
     chart: elasticsearch
-    targetRevision: 7.17.3  # Or latest supported by Helm repo
+    targetRevision: 7.17.3
     helm:
-      values: |
-        {{ .Files.Get "efk/elasticsearch/values.yaml" }}
+      valueFiles:
+        - efk/elasticsearch/values.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: logging
   syncPolicy:
     automated:
-      selfHeal: true
       prune: true
+      selfHeal: true
     syncOptions:
     - CreateNamespace=true
