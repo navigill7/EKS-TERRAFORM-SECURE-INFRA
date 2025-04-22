@@ -6,7 +6,6 @@ on:
       - main
     paths:
       - 'Development/client/**'
-      - 'backend-ready.txt'
 
 env:
   AWS_REGION: us-east-1
