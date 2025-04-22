@@ -11,8 +11,8 @@ frontend:
 
 backend:
   image:
-    repository: 774305587934.dkr.ecr.us-east-1.amazonaws.com/unilink/artifacts/server_image
-    tag: ca7340ed8a035b3c6709af80994721c2804decea
+    repository: 221082179535.dkr.ecr.us-east-1.amazonaws.com/unilink/artifacts/server_image
+    tag: 4ac2a3c417233aa7061fc55ff3442041b1b913e8
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
