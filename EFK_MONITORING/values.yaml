@@ -7,5 +7,5 @@ kibana:
   replicas: 1
 
 fluentd:
-  image: fluent/fluentd-kubernetes-daemonset:v1.16.3-debian-elasticsearch7-1.0
+  image: fluent/fluentd-kubernetes-daemonset:v1.18-debian-elasticsearch7-1
   replicas: 1
