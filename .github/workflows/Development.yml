@@ -1,0 +1,253 @@
+name: Development
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Development/client/**'
+      - 'Development/server/**'
+
+env:
+  AWS_REGION: us-east-1
+  CLIENT_ECR_REPOSITORY: unilink/artifacts/client_image
+  SERVER_ECR_REPOSITORY: unilink/artifacts/server_image
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  IMAGE_TAG: ${{ github.sha }}
+  CLIENT_DOCKER_IMAGE: ""
+  SERVER_DOCKER_IMAGE: ""
+  ARGOCD_SERVER: ${{ secrets.ARGOCD_SERVER }}
+  ARGOCD_USERNAME: ${{ secrets.ARGOCD_USERNAME }}
+  ARGOCD_PASSWORD: ${{ secrets.ARGOCD_PASSWORD }}
+  APP_NAME: demo.com
+
+jobs:
+  build-and-push-ecr-client:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.event.paths && contains(github.event.paths, 'Development/client/**')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set Docker image name for client
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          echo "CLIENT_DOCKER_IMAGE=${{ env.CLIENT_ECR_REPOSITORY }}:${SHORT_SHA}" >> $GITHUB_ENV
+          echo "Docker image name: ${{ env.CLIENT_DOCKER_IMAGE }}"
+
+      - name: Login to Amazon ECR using AWS CLI
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set region ${{ env.AWS_REGION }}
+          aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+
+      - name: Build Docker image for client
+        run: |
+          docker build -t "${{ env.CLIENT_DOCKER_IMAGE }}" ./Development/client
+          echo "Docker build complete for client."
+
+      - name: Tag Docker image for ECR (client)
+        run: |
+          ECR_IMAGE="${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.CLIENT_ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}"
+          echo "CLIENT_ECR_IMAGE=$ECR_IMAGE" >> $GITHUB_ENV
+          docker tag "${{ env.CLIENT_DOCKER_IMAGE }}" "$ECR_IMAGE"
+
+      - name: Push Docker image to ECR (client)
+        run: |
+          docker push "${{ env.CLIENT_ECR_IMAGE }}"
+          echo "Docker push complete for client."
+
+      - name: Install ArgoCD CLI
+        run: |
+          curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          chmod +x argocd
+          sudo mv argocd /usr/local/bin/argocd
+
+      - name: Debug ArgoCD Server
+        run: |
+          echo "ARGOCD_SERVER=${{ env.ARGOCD_SERVER }}"
+
+      - name: Save image tag to file (client)
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > client_image_tag.txt
+          echo "${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.CLIENT_ECR_REPOSITORY }}" > client_repository_tag.txt
+          echo "Saved repository path: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.CLIENT_ECR_REPOSITORY }}"
+
+      - name: Upload image tag artifact (client)
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-image-tag
+          path: client_image_tag.txt
+
+      - name: Upload repository tag artifact (client)
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-rep-tag
+          path: client_repository_tag.txt
+
+  use-image-tag-client:
+    runs-on: ubuntu-latest
+    needs: build-and-push-ecr-client
+    if: github.event_name == 'push' && github.event.paths && contains(github.event.paths, 'Development/client/**')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ssh-key: ${{ secrets.PRIVATE }}
+          repository: ${{ github.repository }}
+
+      - name: Download image-tag artifact (client)
+        uses: actions/download-artifact@v4
+        with:
+          name: client-image-tag
+
+      - name: Show image tag (client)
+        run: |
+          echo "Downloaded client image tag:"
+          cat client_image_tag.txt
+
+      - name: Setup SSH for Git
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PRIVATE }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          git config --global url."git@github.com:".insteadOf "https://github.com/"
+
+      - name: Update values.yaml file (client)
+        run: |
+          sed -i "/frontend:/,/^[^ ]/ s|\(tag: \).*|\1${{ env.IMAGE_TAG }}|" Deployments/values.yaml
+          sed -i "/frontend:/,/^[^ ]/ s|\(repository: \).*|\1${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.CLIENT_ECR_REPOSITORY }}|" Deployments/values.yaml
+          echo "Updated frontend image tag in values.yaml to: ${{ env.IMAGE_TAG }}"
+          echo "Updated frontend repository in values.yaml to: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.CLIENT_ECR_REPOSITORY }}"
+
+      - name: Commit and push changes (client)
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git pull --rebase origin main
+          git add Deployments/values.yaml
+          git commit -m "chore: update client image tag in values.yaml to ${{ env.IMAGE_TAG }}"
+          git push git@github.com:${{ github.repository }}.git HEAD:main
+
+  build-and-push-ecr-server:
+    runs-on: ubuntu-latest
+    needs: use-image-tag-client
+    if: github.event_name == 'push' && github.event.paths && contains(github.event.paths, 'Development/server/**')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set Docker image name for server
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          echo "SERVER_DOCKER_IMAGE=${{ env.SERVER_ECR_REPOSITORY }}:${SHORT_SHA}" >> $GITHUB_ENV
+          echo "Docker image name: ${{ env.SERVER_DOCKER_IMAGE }}"
+
+      - name: Login to Amazon ECR using AWS CLI
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set region ${{ env.AWS_REGION }}
+          aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+
+      - name: Build Docker image for server
+        run: |
+          docker build -t "${{ env.SERVER_DOCKER_IMAGE }}" ./Development/server
+          echo "Docker build complete for server."
+
+      - name: Tag Docker image for ECR (server)
+        run: |
+          ECR_IMAGE="${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.SERVER_ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}"
+          echo "SERVER_ECR_IMAGE=$ECR_IMAGE" >> $GITHUB_ENV
+          docker tag "${{ env.SERVER_DOCKER_IMAGE }}" "$ECR_IMAGE"
+
+      - name: Push Docker image to ECR (server)
+        run: |
+          docker push "${{ env.SERVER_ECR_IMAGE }}"
+          echo "Docker push complete for server."
+
+      - name: Install ArgoCD CLI
+        run: |
+          curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          chmod +x argocd
+         runners-updated: true
+          sudo mv argocd /usr/local/bin/argocd
+
+      - name: Debug ArgoCD Server
+        run: |
+          echo "ARGOCD_SERVER=${{ env.ARGOCD_SERVER }}"
+
+      - name: Save image tag to file (server)
+        run: |
+          echo "${{ env.IMAGE_TAG }}" > server_image_tag.txt
+          echo "${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.SERVER_ECR_REPOSITORY }}" > server_repository_tag.txt
+          echo "Saved repository path: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.SERVER_ECR_REPOSITORY }}"
+
+      - name: Upload image tag artifact (server)
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-image-tag
+          path: server_image_tag.txt
+
+      - name: Upload repository tag artifact (server)
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-rep-tag
+          path: server_repository_tag.txt
+
+  use-image-tag-server:
+    runs-on: ubuntu-latest
+    needs: build-and-push-ecr-server
+    if: github.event_name == 'push' && github.event.paths && contains(github.event.paths, 'Development/server/**')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ssh-key: ${{ secrets.PRIVATE }}
+          repository: ${{ github.repository }}
+
+      - name: Download image-tag artifact (server)
+        uses: actions/download-artifact@v4
+        with:
+          name: server-image-tag
+
+      - name: Show image tag (server)
+        run: |
+          echo "Downloaded server image tag:"
+          cat server_image_tag.txt
+
+      - name: Setup SSH for Git
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PRIVATE }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          git config --global url."git@github.com:".insteadOf "https://github.com/"
+
+      - name: Update values.yaml file (server)
+        run: |
+          sed -i "/backend:/,/^[^ ]/ s|\(tag: \).*|\1${{ env.IMAGE_TAG }}|" Deployments/values.yaml
+          sed -i "/backend:/,/^[^ ]/ s|\(repository: \).*|\1${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.SERVER_ECR_REPOSITORY }}|" Deployments/values.yaml
+          echo "Updated backend image tag in values.yaml to: ${{ env.IMAGE_TAG }}"
+          echo "Updated backend repository in values.yaml to: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.SERVER_ECR_REPOSITORY }}"
+
+      - name: Commit and push changes (server)
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git pull --rebase origin main
+          git add Deployments/values.yaml
+          git commit -m "chore: update server image tag in values.yaml to ${{ env.IMAGE_TAG }}"
+          git push git@github.com:${{ github.repository }}.git HEAD:main
