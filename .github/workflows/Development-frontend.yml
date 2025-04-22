@@ -1,15 +1,15 @@
-name: DevelopmentCI2
+name: Development-frontend
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'Development/**'
+      - 'Development/client/**'
 
 env:
   AWS_REGION: us-east-1
-  ECR_REPOSITORY: development
+  ECR_REPOSITORY: unilink/artifacts/client_image
   AWS_ACCOUNT_ID: ${{secrets.AWS_ACCOUNT_ID}}
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -55,8 +55,15 @@ jobs:
 
       - name: Update values.yaml file
         run: |
-          sed -i "s|\(tag: \).*|\1${{ env.IMAGE_TAG }}|" Deployments/values.yaml
+          sed -i "/frontend:/,/^[^ ]/ s|\(tag: \).*|\1${{ env.IMAGE_TAG }}|" Deployments/values.yaml
+          # sed -i "s|\(tag: \).*|\1${{ env.IMAGE_TAG }}|" Deployments/values.yaml
           echo "Updated image tag in values.yaml to: ${{ env.IMAGE_TAG }}"
+
+          # update ecr repo 
+          sed -i "/frontend:/,/^[^ ]/ s|\(repository: \).*|\1${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}|" Deployments/values.yaml
+          echo "Updated frontend repository in values.yaml to: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}"
+    
+
 
       - name: Commit and push changes
         run: |
@@ -92,7 +99,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t "${{ env.DOCKER_IMAGE }}" ./Development
+          docker build -t "${{ env.DOCKER_IMAGE }}" ./Development/client
           echo "Docker build complete."
 
       - name: Tag Docker image for ECR
@@ -142,6 +149,9 @@ jobs:
       - name: Save image tag to file
         run: |
           echo "${{ env.IMAGE_TAG }}" > image_tag.txt
+          echo "${{ env.ECR_REPOSITORY }}" > repository_tag.txt
+          echo "${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}" > repository_tag.txt
+          echo "Saved repository path: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}"
 
       - name: Upload image tag artifact
         uses: actions/upload-artifact@v4
@@ -150,18 +160,8 @@ jobs:
           path: image_tag.txt   
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-          
+      - name: Upload repository tag artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rep-tag
+          path: repository_tag.txt   

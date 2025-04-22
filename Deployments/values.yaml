@@ -1,7 +1,7 @@
 frontend:
   image:
-    repository: 221082179535.dkr.ecr.us-east-1.amazonaws.com/unilink/artifacts/client_image
-    tag: d453d71a4c8003a5fc7c808e95b594ee9ab20ed6
+    repository: 774305587934.dkr.ecr.us-east-1.amazonaws.com/unilink/artifacts/client_image
+    tag: cc8fedf0cc90af73418b4843d7c05e967dfe84b2
     pullPolicy: IfNotPresent
   service:
     type: LoadBalancer
@@ -11,8 +11,8 @@ frontend:
 
 backend:
   image:
-    repository: 221082179535.dkr.ecr.us-east-1.amazonaws.com/unilink/artifacts/server_image
-    tag: latest
+    repository: 774305587934.dkr.ecr.us-east-1.amazonaws.com/unilink/artifacts/server_image
+    tag: ca7340ed8a035b3c6709af80994721c2804decea
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
