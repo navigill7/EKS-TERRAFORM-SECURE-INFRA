@@ -1,7 +1,7 @@
 frontend:
   image:
     repository: 774305587934.dkr.ecr.us-east-1.amazonaws.com/unilink/artifacts/client_image
-    tag: be46f4efca0b1a351f43805c7fd9b368bf0db336
+    tag: 02c2862b9176d19742eaaada868f4a8b38c17c7f
     pullPolicy: IfNotPresent
   service:
     type: LoadBalancer
