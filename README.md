@@ -18,11 +18,9 @@ This setup provides a production-grade Kubernetes environment with robust securi
 
 THIS IS THE COMPLETE CI/CD 
 
-![diagram-export-17-04-2025-01_43_33](https://github.com/user-attachments/assets/163ff7a1-5569-47b4-9fb9-891f6793d846)
+![eks_project](https://github.com/user-attachments/assets/71906fb0-b8ac-4b8c-9666-5f3f8045ba57)
 
-THIS IS THE EKS ARCHITECTURE
 
-![1_-5-brOYKHCKG-QHqQlysGg](https://github.com/user-attachments/assets/ccb8e885-ef56-4636-8e65-a1deda5b3a70)
 
 
 
