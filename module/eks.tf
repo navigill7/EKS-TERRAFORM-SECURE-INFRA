@@ -11,11 +11,35 @@ resource "aws_eks_cluster" "eks" {
     endpoint_public_access  = var.cluster_public_access
     security_group_ids      = [aws_security_group.eks_security_group.id]
   }
-
+  // If you want to use the default authentication mode, you can leave this empty`
+  // If you want to use a custom authentication mode, you can specify the configuration here
   access_config {
     authentication_mode                         = "CONFIG_MAP"
     bootstrap_cluster_creator_admin_permissions = true
   }
+
+  // If you want to use the default VPC CNI plugin, you can leave this empty
+  // If you want to use a custom CNI plugin, you can specify the configuration here
+  // For example, if you want to use the Amazon VPC CNI plugin, you can specify the configuration like this:
+  // kubernetes_network_config {
+  //   ip_family = "ipv4"
+  //   cni_plugin_version = "v1.10.0"
+  //   cni_plugin_config = {
+  //     eni_config = {
+  //       max_pods = 110
+  //     }
+  //   }
+  // }
+
+   depends_on = [ 
+    aws_iam_role_policy_attachment.eks_AmazonEKSClusterPolicy,
+    aws_iam_role_policy_attachment.eks_AmazonEKSVPCResourceController]
+   kubernetes_network_config {
+     
+   }
+
+   // enable the control plane logging for the cluster
+  enabled_cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
 
   tags = {
     Name = var.cluster-name
