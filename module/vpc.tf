@@ -159,3 +159,8 @@ resource "aws_security_group" "eks_security_group" {
   }
 }
 
+variable "is_kms_key_enabled" {
+  type = bool 
+  
+}
+
