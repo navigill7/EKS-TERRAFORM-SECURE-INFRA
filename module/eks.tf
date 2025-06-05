@@ -38,6 +38,15 @@ resource "aws_eks_cluster" "eks" {
      
    }
 
+   encryption_config {
+    provider {
+      key_arn = aws_kms_key.eks_kms_key[0].arn
+    }
+    resources = ["secrets"]
+   }
+
+   
+
    // enable the control plane logging for the cluster
   enabled_cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
 
