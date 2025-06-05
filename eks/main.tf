@@ -42,4 +42,5 @@ module "eks" {
     is_eks_cluster_enabled = var.is_eks_cluster_enabled
     spot_instance_type = var.spot_instance_type
     cidr_block = var.cidr_block
+    is_eks_cluster_enabled = var.is_eks_cluster_enabled
 }

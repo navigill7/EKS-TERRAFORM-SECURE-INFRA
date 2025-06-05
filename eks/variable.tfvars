@@ -35,6 +35,8 @@ max_capacity_ondemand = "4"
 min_capacity_spot_node = "1"
 max_capacity_spot_node = "4"
 
+is_eks_cluster_enabled = true
+
 addons = [
   {
     name    = "vpc-cni",

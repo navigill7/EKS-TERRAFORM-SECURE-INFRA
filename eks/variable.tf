@@ -152,4 +152,11 @@ variable "spot_instance_type" {
   
 }
 
+variable "is_kms_key_enabled" {
+  type = bool
+  default = false
+  
+}
+
+
 
