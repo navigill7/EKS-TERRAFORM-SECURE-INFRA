@@ -29,6 +29,13 @@ resource "aws_iam_role_policy_attachment" "AmazonEKSClusterPolicy" {
   role       = aws_iam_role.eks_cluster_role[count.index].name
 }
 
+resource "aws_iam_role_policy_attachment" "AmazonEKSVPCResourceController" {
+  count      = var.is_eks_role_enabled ? 1 : 0
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSVPCResourceController"
+  role       = aws_iam_role.eks_cluster_role[count.index].name
+  
+}
+
 // IAM role for worker nodes
 resource "aws_iam_role" "eks_nodegroup_role" {
   count = var.is_eks_nodegroup_role_enabled ? 1 : 0
