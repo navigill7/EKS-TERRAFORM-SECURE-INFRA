@@ -2,29 +2,41 @@ import mongoose from "mongoose";
 
 const UserSchema = new mongoose.Schema(
     {
-        firstName:{
-            type:String,
-            required: true,
+        
+        firstName: {
+            type: String,
             min: 2,
-            max:50,
+            max: 50,
         },
         lastName: {
-            type:String,
-            required: true,
+            type: String,
             min: 2,
-            max:50,
+            max: 50,
         },
-        email:{
-            type:String,
+        email: {
+            type: String,
             required: true,
-            unique:true,
-            max:50,
+            unique: true,
+            max: 50,
         },
         password: {
             type: String,
-            required: true,
             min: 5,
         },
+        
+        // OAuth Fields
+        discordId: {
+            type: String,
+            unique: true,
+            sparse: true, 
+        },
+        provider: {
+            type: String,
+            enum: ['local', 'discord'],
+            default: 'local',
+        },
+        
+        // Common Fields
         picturePath: {
             type: String,
             default: "",
@@ -33,11 +45,22 @@ const UserSchema = new mongoose.Schema(
             type: [String],
             default: [],
         },
-        location: String,
-        Year: String,
-        viewedProfile: Number,
-        impressions: Number,
-        // NEW: Social Media URLs
+        location: {
+            type: String,
+            default: "",
+        },
+        Year: {
+            type: String,
+            default: "",
+        },
+        viewedProfile: {
+            type: Number,
+            default: 0,
+        },
+        impressions: {
+            type: Number,
+            default: 0,
+        },
         twitterUrl: {
             type: String,
             default: "",
@@ -46,8 +69,22 @@ const UserSchema = new mongoose.Schema(
             type: String,
             default: "",
         },
-    }, 
-    {timestamps: true}
+        
+        // Discord specific fields
+        discordUsername: {
+            type: String,
+            default: "",
+        },
+        discordDiscriminator: {
+            type: String,
+            default: "",
+        },
+        discordAvatar: {
+            type: String,
+            default: "",
+        },
+    },
+    { timestamps: true }
 );
 
 const User = mongoose.model("User", UserSchema);
