@@ -3,9 +3,9 @@ name: Development_server
 on:
   push:
     branches:
-      - main
+      # - main
     paths:
-      - 'Development/server/**'
+      # - 'Development/server/**'
 
 env:
   AWS_REGION: us-east-1
