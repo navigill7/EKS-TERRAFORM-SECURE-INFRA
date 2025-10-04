@@ -1,49 +1,51 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-    mode : "light",
+    mode: "light",
     user: null,
     token: null,
     posts: [],
 };
 
-export  const authSlice = createSlice({
+export const authSlice = createSlice({
     name: "auth",
     initialState,
     reducers: {
-        setMode: (state) =>{
+        setMode: (state) => {
             state.mode = state.mode === "light" ? "dark" : "light";
         },
-        setLogin: (state , action) =>{
+        setLogin: (state, action) => {
             state.user = action.payload.user;
             state.token = action.payload.token;
         },
-        setLogout: (state)=>{
+        setLogout: (state) => {
             state.user = null;
             state.token = null;
         },
-        setFriends: (state , action)=>{
-            if(state.user){
+        // NEW: Update user data (for social URLs, profile updates, etc.)
+        setUser: (state, action) => {
+            state.user = action.payload.user;
+        },
+        setFriends: (state, action) => {
+            if (state.user) {
                 state.user.friends = action.payload.friends;
-            }else{
-                console.error("User friends non-existent")
+            } else {
+                console.error("User friends non-existent");
             }
         },
-        
-        setPosts: (state , action)=>{
+        setPosts: (state, action) => {
             state.posts = action.payload.posts;
         },
-        setPost: (state , action)=>{
-            const updatedPosts = state.posts.map((post)=>{
-                if (post._id === action.payload.post._id) return action.payload.post ;
+        setPost: (state, action) => {
+            const updatedPosts = state.posts.map((post) => {
+                if (post._id === action.payload.post._id) return action.payload.post;
                 return post;
-            })
+            });
             state.posts = updatedPosts;
         }
     }
-})
+});
 
-
-export const {setMode, setLogin, setLogout, setFriends, setPost, setPosts}  = authSlice.actions;
+export const { setMode, setLogin, setLogout, setUser, setFriends, setPost, setPosts } = authSlice.actions;
 
 export default authSlice.reducer;
