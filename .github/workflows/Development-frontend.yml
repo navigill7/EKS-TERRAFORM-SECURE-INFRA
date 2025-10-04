@@ -3,9 +3,9 @@ name: Development-frontend
 on:
   push:
     branches:
-      - main
+      # - main
     paths:
-      - 'Development/client/**'
+      # - 'Development/client/**'
 
 env:
   AWS_REGION: us-east-1
