@@ -3,6 +3,7 @@ import HomePage from "scenes/homePage";
 import LoginPage from "scenes/loginPage";
 import AlumniPage from "scenes/alumniPage";
 import ProfilePage from "scenes/profilePage";
+import AuthCallback from "scenes/authCallback";
 import { useEffect } from "react";
 import { useSelector } from "react-redux";
 
@@ -21,9 +22,10 @@ function App() {
 
   return (
     <div className={`App min-h-screen ${mode === 'dark' ? 'bg-grey-900 text-grey-100' : 'bg-grey-10 text-grey-700'} transition-colors duration-300`}>
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
           <Route path="/" element={<LoginPage />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/home" element={isAuth ? <HomePage /> : <Navigate to="/" />} />
           <Route path="/profile/:userId" element={isAuth ? <ProfilePage /> : <Navigate to="/" />} />
           <Route path="/home/alumniPage" element={isAuth ? <AlumniPage /> : <Navigate to="/" />} />
