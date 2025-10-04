@@ -1,8 +1,16 @@
 {
-     "compilerOptions": {
-        "baseUrl": "src"
-     
+    "compilerOptions": {
+      "baseUrl": "src",
+      "paths": {
+        "components/*": ["components/*"],
+        "scenes/*": ["scenes/*"],
+        "state/*": ["state/*"]
+      },
+      "jsx": "react",
+      "module": "ESNext",
+      "target": "ES2020",
+      "lib": ["ES2020", "DOM", "DOM.Iterable"]
     },
-    "include": ["src"]
-
-}
+    "include": ["src"],
+    "exclude": ["node_modules", "build", "dist"]
+  }
