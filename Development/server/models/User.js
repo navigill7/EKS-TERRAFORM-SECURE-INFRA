@@ -37,11 +37,19 @@ const UserSchema = new mongoose.Schema(
         Year: String,
         viewedProfile: Number,
         impressions: Number,
+        // NEW: Social Media URLs
+        twitterUrl: {
+            type: String,
+            default: "",
+        },
+        linkedInUrl: {
+            type: String,
+            default: "",
+        },
+    }, 
+    {timestamps: true}
+);
 
+const User = mongoose.model("User", UserSchema);
 
-    
-    }, {timestamps: true});
-
-    const User = mongoose.model("User" , UserSchema)
-
-    export default User
+export default User;
