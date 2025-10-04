@@ -1,192 +1,145 @@
-import {
-    EditOutlined,
-    AttachFileOutlined,
-    GifBoxOutlined,
-    ImageOutlined,
-    MicOutlined,
-    MoreHorizOutlined,
-    Gif,
-
-} from "@mui/icons-material";
-import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
-import { 
-   Box,
-   Divider,
-   Typography,
-   InputBase,
-   useTheme,
-   Button,
-   IconButton,
-   useMediaQuery
-} from "@mui/material"
-
-// import { Dropzone } from "react-dropzone";
+import { Edit2, Image, Film, Paperclip, Mic, MoreHorizontal, X } from "lucide-react";
 import Dropzone from "react-dropzone";
 import UserImage from "components/UserImage";
 import FlexBetween from "components/FlexBetween";
 import WidgetWrapper from "components/WidgetWrapper";
 import { useState } from "react";
-import {useDispatch , useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { setPosts } from "state";
+import { API_ENDPOINTS } from "config/api";
 
-
-const MyPostWidget = ({ picturePath }) =>{
+const MyPostWidget = ({ picturePath }) => {
   const dispatch = useDispatch();
-  const [isImage , setIsImage] = useState(false);
-  const [image , setImage] = useState(null);
-  const [post , setPost] = useState("");
-  const {palette} = useTheme();
-  const { _id } = useSelector((state)=>state.user);
-  const token = useSelector((state)=>state.token);
-  const isNonMobileScreens = useMediaQuery("(min-width: 1000px)");
-  const mediumMain = palette.neutral.mediumMain;
-  const medium = palette.neutral.medium;
-  const handlePost = async () =>{
-    const formData = new FormData()
-    formData.append("userId" , _id);
-    formData.append("description" , post);
-    if(image){
-      formData.append("picture", image);
-      formData.append("picturePath" , image.name);
+  const [isImage, setIsImage] = useState(false);
+  const [image, setImage] = useState(null);
+  const [post, setPost] = useState("");
+  const { _id } = useSelector((state) => state.user);
+  const token = useSelector((state) => state.token);
 
+  const handlePost = async () => {
+    const formData = new FormData();
+    formData.append("userId", _id);
+    formData.append("description", post);
+    if (image) {
+      formData.append("picture", image);
+      formData.append("picturePath", image.name);
     }
 
-    const response = await fetch(`/api/posts` ,{
+    const response = await fetch(`http://localhost:3001/posts`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: formData,
     });
-    const posts  = await response.json();
-    dispatch(setPosts({posts}));
+    const posts = await response.json();
+    dispatch(setPosts({ posts }));
     setImage(null);
     setPost("");
-
+    setIsImage(false);
   };
 
   return (
     <WidgetWrapper>
-      <FlexBetween gap="1.5rem">
+      <FlexBetween gap="gap-4" className="mb-4">
         <UserImage image={picturePath} />
-        <InputBase 
+        <input
           placeholder="What's on your mind..."
-          onChange={(e)=> setPost(e.target.value)}
+          onChange={(e) => setPost(e.target.value)}
           value={post}
-          sx={{
-            width: "100%",
-            backgroundColor: palette.neutral.light,
-            borderRadius: "2rem",
-            padding: "1rem 2rem",
-          }}
+          className="flex-1 px-4 py-3 bg-grey-50 dark:bg-grey-700 rounded-full text-grey-700 dark:text-grey-100 placeholder-grey-400 dark:placeholder-grey-500 outline-none focus:ring-2 focus:ring-primary-500/50 transition-all duration-200"
         />
       </FlexBetween>
+
       {isImage && (
-        <Box
-           border={`1px solid ${medium}`}
-           borderRadius="5px"
-           mt="1rem"
-           p="1rem"
-        >
-         <Dropzone
-              acceptedFiles=".jpg,.jpeg,.png"
-              multiple={false}
-              onDrop={(acceptedFiles) =>setImage( acceptedFiles[0])}
+        <div className="mb-4 p-4 border border-grey-200 dark:border-grey-700 rounded-lg">
+          <Dropzone
+            acceptedFiles=".jpg,.jpeg,.png"
+            multiple={false}
+            onDrop={(acceptedFiles) => setImage(acceptedFiles[0])}
           >
-              {({ getRootProps, getInputProps }) => (
-                <FlexBetween>
-                <Box
+            {({ getRootProps, getInputProps }) => (
+              <FlexBetween>
+                <div
                   {...getRootProps()}
-                  border={`2px dashed ${palette.primary.main}`}
-                  p="1rem"
-                  width="100%"
-                  sx={{ "&:hover": { cursor: "pointer" } }}
+                  className="flex-1 p-4 border-2 border-dashed border-primary-300 dark:border-primary-700 rounded-lg cursor-pointer hover:border-primary-500 hover:bg-primary-50/50 dark:hover:bg-primary-900/10 transition-all duration-200"
                 >
                   <input {...getInputProps()} />
                   {!image ? (
-                    <p>Add Your Latest Project Image Here...</p>
+                    <p className="text-grey-500 dark:text-grey-400 text-center">
+                      Add Your Latest Project Image Here...
+                    </p>
                   ) : (
                     <FlexBetween>
-                      <Typography>{image.name}</Typography>
-                      <EditOutlined />
+                      <p className="text-grey-700 dark:text-grey-100">{image.name}</p>
+                      <Edit2 className="w-5 h-5 text-primary-500" />
                     </FlexBetween>
                   )}
-                </Box>
-                  {image &&(
-                    <IconButton 
-                       onClick={()=> setImage(null)}
-                       sx={{ width: "15%" }}
-                    >
-                      <DeleteOutlinedIcon />
-                    </IconButton>
-                  )}
-                </FlexBetween>
-              )}
+                </div>
+                {image && (
+                  <button
+                    onClick={() => setImage(null)}
+                    className="ml-4 p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 transition-colors duration-200"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                )}
+              </FlexBetween>
+            )}
           </Dropzone>
-        </Box>
+        </div>
       )}
-      <Divider sx={{margin: "1.25rem 0"}} />
+
+      <div className="border-t border-grey-100 dark:border-grey-700 my-4" />
 
       <FlexBetween>
-        <FlexBetween gap="0.25rem 0" onClick={()=> setIsImage(!isImage)}>
-          <ImageOutlined sx={{color: mediumMain}} />
-          <Typography
-            color={mediumMain}
-            sx={{ "&:hover": {cursor: "pointer" , color: medium} }}
+        <div className="flex items-center gap-4 flex-wrap">
+          <button
+            onClick={() => setIsImage(!isImage)}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-grey-100 dark:hover:bg-grey-700 transition-colors duration-200 group"
           >
-            Image
-          </Typography>
-        </FlexBetween>
-        {isNonMobileScreens ? (
-          <>
-            <FlexBetween gap="0.25rem">
-              <GifBoxOutlined sx={{ color: mediumMain }}/>
-              <Typography 
-                 color={mediumMain}
-              >
+            <Image className="w-5 h-5 text-grey-500 dark:text-grey-400 group-hover:text-primary-500 transition-colors duration-200" />
+            <span className="text-sm text-grey-600 dark:text-grey-300 group-hover:text-primary-500 transition-colors duration-200 hidden sm:inline">
+              Image
+            </span>
+          </button>
+
+          <div className="hidden md:flex items-center gap-4">
+            <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-grey-100 dark:hover:bg-grey-700 transition-colors duration-200 group">
+              <Film className="w-5 h-5 text-grey-500 dark:text-grey-400 group-hover:text-primary-500 transition-colors duration-200" />
+              <span className="text-sm text-grey-600 dark:text-grey-300 group-hover:text-primary-500 transition-colors duration-200">
                 Clip
-              </Typography>
-            </FlexBetween>
+              </span>
+            </button>
 
-            <FlexBetween gap="0.25rem">
-              <AttachFileOutlined sx={{ color: mediumMain }}/>
-              <Typography 
-                 color={mediumMain}
-              >
+            <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-grey-100 dark:hover:bg-grey-700 transition-colors duration-200 group">
+              <Paperclip className="w-5 h-5 text-grey-500 dark:text-grey-400 group-hover:text-primary-500 transition-colors duration-200" />
+              <span className="text-sm text-grey-600 dark:text-grey-300 group-hover:text-primary-500 transition-colors duration-200">
                 Attachment
-              </Typography>
-            </FlexBetween>
+              </span>
+            </button>
 
-            <FlexBetween gap="0.25rem">
-              <MicOutlined sx={{ color: mediumMain }}/>
-              <Typography 
-                 color={mediumMain}
-              >
+            <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-grey-100 dark:hover:bg-grey-700 transition-colors duration-200 group">
+              <Mic className="w-5 h-5 text-grey-500 dark:text-grey-400 group-hover:text-primary-500 transition-colors duration-200" />
+              <span className="text-sm text-grey-600 dark:text-grey-300 group-hover:text-primary-500 transition-colors duration-200">
                 Audio
-              </Typography>
-            </FlexBetween>
+              </span>
+            </button>
+          </div>
 
-          </>
-        ) : <FlexBetween
-           gap="0.25rem"
+          <button className="md:hidden p-2 rounded-lg hover:bg-grey-100 dark:hover:bg-grey-700 transition-colors duration-200">
+            <MoreHorizontal className="w-5 h-5 text-grey-500 dark:text-grey-400" />
+          </button>
+        </div>
+
+        <button
+          disabled={!post}
+          onClick={handlePost}
+          className="px-6 py-2 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 disabled:from-grey-300 disabled:to-grey-300 dark:disabled:from-grey-700 dark:disabled:to-grey-700 text-white rounded-full font-medium transition-all duration-200 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
         >
-          <MoreHorizOutlined sx={{color: mediumMain}} />
-          </FlexBetween>}
-
-          <Button
-             disabled={!post}
-             onClick={handlePost}
-             sx={{
-              color: palette.background.alt,
-              backgroundColor: palette.primary.main,
-              borderRadius: "3rem"
-             }}
-          >
-            POST
-          </Button>
+          POST
+        </button>
       </FlexBetween>
-
-
     </WidgetWrapper>
-  )
-}
+  );
+};
 
 export default MyPostWidget;

@@ -1,31 +1,23 @@
 import React, { useEffect, useRef } from "react";
-import { Box, useMediaQuery } from "@mui/material";
 import Navbar from "scenes/navbar";
 import { useSelector } from "react-redux";
 import UserWidget from "scenes/widgets/UserWidget";
 import MyPostWidget from "scenes/widgets/MyPostWidget";
 import PostsWidget from "scenes/widgets/PostsWidget";
-import Friend from "components/Friends";
 import EventsWidget from "scenes/widgets/Events";
 import ConnectionListWidget from "scenes/widgets/ConnectionListWidget";
-
+import SocialUrlsTest from "components/SocialUrlTest"; 
 
 const HomePage = () => {
-  const isNonMobileScreens = useMediaQuery("(min-width:1000px)");
-
-  
   const { _id, picturePath } = useSelector((state) => state.user);
   const chatbotContainerRef = useRef(null);
 
-
   useEffect(() => {
-    // Load Botpress script
     const script = document.createElement("script");
     script.src = "https://cdn.botpress.cloud/webchat/v1/inject.js";
     script.async = true;
     document.body.appendChild(script);
 
-    // When script is loaded, configure the chatbot
     script.onload = () => {
       if (chatbotContainerRef.current) {
         const scriptConfig = document.createElement("script");
@@ -36,45 +28,41 @@ const HomePage = () => {
       }
     };
 
-    // Cleanup
     return () => {
       document.body.removeChild(script);
     };
   }, []);
 
   return (
-    <Box>
+    <div className="min-h-screen bg-grey-50 dark:bg-grey-900">
       <Navbar />
-      <Box
-        width="100%"
-        padding="2rem 6%"
-        display={isNonMobileScreens ? "flex" : "block"}
-        gap="0.5rem"
-        justifyContent="space-between"
-      >
-        <Box flexBasis={isNonMobileScreens ? "26%" : undefined}>
-          <UserWidget userId={_id} picturePath={picturePath} />
-        </Box>
-        <Box flexBasis={isNonMobileScreens ? "42%" : undefined} mt={isNonMobileScreens ? undefined : "2rem"}>
-          <MyPostWidget picturePath={picturePath} />
-          <PostsWidget userId={_id} />
-        </Box>
+      <div className="w-full px-[6%] py-8">
+        <div className="flex flex-col lg:flex-row gap-6 justify-between">
+          {/* Left Sidebar */}
+          <div className="w-full lg:w-[26%]">
+            <UserWidget userId={_id} picturePath={picturePath} />
+          </div>
 
-        {isNonMobileScreens && (
-          <Box flexBasis="26%">
+          {/* Main Content */}
+          <div className="w-full lg:w-[42%] space-y-6">
+            <MyPostWidget picturePath={picturePath} />
+            <PostsWidget userId={_id} />
+          </div>
+
+          {/* Right Sidebar */}
+          <div className="hidden lg:block w-full lg:w-[26%] space-y-6">
             <EventsWidget />
-            <Box m="2rem 0" />
             <ConnectionListWidget userId={_id} />
-          </Box>
-        )}
+          </div>
+        </div>
 
         {/* Chatbot Container */}
-        <Box
+        <div
           ref={chatbotContainerRef}
-          style={{ position: "fixed", bottom: 20, right: 20, zIndex: 999 }}
-        ></Box>
-      </Box>
-    </Box>
+          className="fixed bottom-5 right-5 z-[999]"
+        ></div>
+      </div>
+    </div>
   );
 };
 
