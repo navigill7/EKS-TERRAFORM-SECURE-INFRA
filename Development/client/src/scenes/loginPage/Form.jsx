@@ -3,12 +3,12 @@ import { Edit2 } from "lucide-react";
 import { Formik } from "formik";
 import * as yup from "yup";
 import { useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { setLogin } from "state";
 import Dropzone from "react-dropzone";
 import FlexBetween from "components/FlexBetween";
+import OTPVerification from "components/OTPVerification";
 import { API_ENDPOINTS } from "config/api";
-import { uploadToS3 } from "utils/s3Upload";
 
 const registerSchema = yup.object().shape({
   firstName: yup.string().required("required"),
@@ -42,10 +42,11 @@ const initialValuesLogin = {
 
 const Form = () => {
   const [pageType, setPageType] = useState("login");
+  const [showOTP, setShowOTP] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState("");
   const [uploading, setUploading] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const token = useSelector((state) => state.token); // For S3 upload (register won't have token yet)
   const isLogin = pageType === "login";
   const isRegister = pageType === "register";
 
@@ -56,27 +57,40 @@ const Form = () => {
   const register = async (values, onSubmitProps) => {
     try {
       setUploading(true);
-
+  
+      // STEP 1: Check if email exists FIRST (before uploading to S3)
+      console.log("Checking if email exists...");
+      const checkEmailResponse = await fetch(`${API_ENDPOINTS.USERS}?email=${values.email}`, {
+        method: "GET",
+      });
+  
+      if (checkEmailResponse.ok) {
+        const users = await checkEmailResponse.json();
+        if (users && users.length > 0) {
+          alert("Email already registered. Please use a different email or login.");
+          return;
+        }
+      }
+  
+      // STEP 2: Now upload picture to S3
       let picturePath = "";
-
-      // Upload picture to S3 if provided
       if (values.picture) {
-        // For registration, we'll upload without token first
-        // Get a temporary upload URL
+        console.log("Uploading to S3...");
         const response = await fetch(`${API_ENDPOINTS.S3_UPLOAD_URL}/profile`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
+            fileName: values.picture.name,
             fileType: values.picture.type,
           }),
         });
-
+  
         if (response.ok) {
           const { uploadUrl, accessUrl } = await response.json();
-
-          // Upload to S3
+          console.log("Got presigned URL, uploading file...");
+  
           const uploadResponse = await fetch(uploadUrl, {
             method: "PUT",
             headers: {
@@ -84,15 +98,21 @@ const Form = () => {
             },
             body: values.picture,
           });
-
+  
           if (uploadResponse.ok) {
             picturePath = accessUrl;
+            console.log("Image uploaded to S3:", accessUrl);
+          } else {
+            throw new Error("Failed to upload image to S3");
           }
+        } else {
+          throw new Error("Failed to get presigned URL");
         }
       }
-
-      // Register user with S3 URL
-      const savedUserResponse = await fetch(API_ENDPOINTS.REGISTER, {
+  
+      // STEP 3: Send OTP
+      console.log("Sending OTP...");
+      const otpResponse = await fetch(API_ENDPOINTS.OTP_SEND, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -105,45 +125,52 @@ const Form = () => {
           picturePath: picturePath,
         }),
       });
-
-      if (savedUserResponse.ok) {
-        const savedUser = await savedUserResponse.json();
+  
+      const otpData = await otpResponse.json();
+  
+      if (otpResponse.ok) {
+        console.log("OTP sent successfully!");
+        setPendingEmail(values.email);
+        setShowOTP(true);
         onSubmitProps.resetForm();
-        if (savedUser) {
-          setPageType("login");
-        }
+        alert("Verification code sent to your email! Check your inbox.");
       } else {
-        console.error("Failed to register:", savedUserResponse.statusText);
+        throw new Error(otpData.message || "Failed to send OTP");
       }
     } catch (error) {
       console.error("Registration error:", error);
-      alert("Failed to register. Please try again.");
+      alert(error.message || "Failed to register. Please try again.");
     } finally {
       setUploading(false);
     }
   };
 
   const login = async (values, onSubmitProps) => {
-    const loggedInResponse = await fetch(API_ENDPOINTS.LOGIN, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values),
-    });
+    try {
+      const loggedInResponse = await fetch(API_ENDPOINTS.LOGIN, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
 
-    if (loggedInResponse.ok) {
+      if (!loggedInResponse.ok) {
+        const errorData = await loggedInResponse.json();
+        throw new Error(errorData.message || "Failed to login");
+      }
+
       const loggedIn = await loggedInResponse.json();
       onSubmitProps.resetForm();
-      if (loggedIn) {
-        dispatch(
-          setLogin({
-            user: loggedIn.user,
-            token: loggedIn.token,
-          })
-        );
-        navigate("/home");
-      }
-    } else {
-      console.error("Failed to login:", loggedInResponse.statusText);
+
+      dispatch(
+        setLogin({
+          user: loggedIn.user,
+          token: loggedIn.token,
+        })
+      );
+      navigate("/home");
+    } catch (error) {
+      console.error("Login error:", error);
+      alert(error.message || "Invalid credentials");
     }
   };
 
@@ -152,9 +179,28 @@ const Form = () => {
     if (isRegister) await register(values, onSubmitProps);
   };
 
-  // const handleDiscordLogin = () => {
-  //   window.location.href = "http://localhost:3001/auth/discord";
-  // };
+  const handleOTPVerified = (user) => {
+    setShowOTP(false);
+    setPendingEmail("");
+    setPageType("login");
+    alert("Registration successful! Please login with your credentials.");
+  };
+
+  const handleBackFromOTP = () => {
+    setShowOTP(false);
+    setPendingEmail("");
+  };
+
+  // Show OTP verification screen
+  if (showOTP) {
+    return (
+      <OTPVerification
+        email={pendingEmail}
+        onVerified={handleOTPVerified}
+        onBack={handleBackFromOTP}
+      />
+    );
+  }
 
   return (
     <Formik
@@ -320,7 +366,6 @@ const Form = () => {
             {uploading ? "Uploading..." : isLogin ? "LOGIN" : "REGISTER"}
           </button>
 
-          {/* Divider - Only show on login page */}
           {isLogin && (
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
@@ -334,7 +379,6 @@ const Form = () => {
             </div>
           )}
 
-          {/* Discord Login Button - Only show on login page */}
           {isLogin && (
             <button
               type="button"
