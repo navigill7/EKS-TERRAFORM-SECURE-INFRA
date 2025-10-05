@@ -7,34 +7,53 @@ import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setPosts } from "state";
 import { API_ENDPOINTS } from "config/api";
+import { uploadToS3 } from "utils/s3Upload";
 
 const MyPostWidget = ({ picturePath }) => {
   const dispatch = useDispatch();
   const [isImage, setIsImage] = useState(false);
   const [image, setImage] = useState(null);
   const [post, setPost] = useState("");
+  const [uploading, setUploading] = useState(false);
   const { _id } = useSelector((state) => state.user);
   const token = useSelector((state) => state.token);
 
   const handlePost = async () => {
-    const formData = new FormData();
-    formData.append("userId", _id);
-    formData.append("description", post);
-    if (image) {
-      formData.append("picture", image);
-      formData.append("picturePath", image.name);
-    }
+    try {
+      setUploading(true);
 
-    const response = await fetch(`http://localhost:3001/posts`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData,
-    });
-    const posts = await response.json();
-    dispatch(setPosts({ posts }));
-    setImage(null);
-    setPost("");
-    setIsImage(false);
+      let picturePath = "";
+
+      // Upload image to S3 if provided
+      if (image) {
+        picturePath = await uploadToS3(image, "post", token);
+      }
+
+      // Create post with S3 URL
+      const response = await fetch(API_ENDPOINTS.POSTS, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: _id,
+          description: post,
+          picturePath: picturePath,
+        }),
+      });
+
+      const posts = await response.json();
+      dispatch(setPosts({ posts }));
+      setImage(null);
+      setPost("");
+      setIsImage(false);
+    } catch (error) {
+      console.error("Error creating post:", error);
+      alert("Failed to create post. Please try again.");
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -131,11 +150,11 @@ const MyPostWidget = ({ picturePath }) => {
         </div>
 
         <button
-          disabled={!post}
+          disabled={!post || uploading}
           onClick={handlePost}
           className="px-6 py-2 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 disabled:from-grey-300 disabled:to-grey-300 dark:disabled:from-grey-700 dark:disabled:to-grey-700 text-white rounded-full font-medium transition-all duration-200 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
         >
-          POST
+          {uploading ? "UPLOADING..." : "POST"}
         </button>
       </FlexBetween>
     </WidgetWrapper>
