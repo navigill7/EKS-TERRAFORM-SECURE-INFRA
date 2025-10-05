@@ -3,11 +3,12 @@ import { Edit2 } from "lucide-react";
 import { Formik } from "formik";
 import * as yup from "yup";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { setLogin } from "state";
 import Dropzone from "react-dropzone";
 import FlexBetween from "components/FlexBetween";
 import { API_ENDPOINTS } from "config/api";
+import { uploadToS3 } from "utils/s3Upload";
 
 const registerSchema = yup.object().shape({
   firstName: yup.string().required("required"),
@@ -41,8 +42,10 @@ const initialValuesLogin = {
 
 const Form = () => {
   const [pageType, setPageType] = useState("login");
+  const [uploading, setUploading] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const token = useSelector((state) => state.token); // For S3 upload (register won't have token yet)
   const isLogin = pageType === "login";
   const isRegister = pageType === "register";
 
@@ -51,24 +54,72 @@ const Form = () => {
   };
 
   const register = async (values, onSubmitProps) => {
-    const formData = new FormData();
-    for (let value in values) {
-      formData.append(value, values[value]);
-    }
-    formData.append("picturePath", values.picture.name);
+    try {
+      setUploading(true);
 
-    const savedUserResponse = await fetch(API_ENDPOINTS.REGISTER, {
-      method: "POST",
-      body: formData,
-    });
-    if (savedUserResponse.ok) {
-      const savedUser = await savedUserResponse.json();
-      onSubmitProps.resetForm();
-      if (savedUser) {
-        setPageType("login");
+      let picturePath = "";
+
+      // Upload picture to S3 if provided
+      if (values.picture) {
+        // For registration, we'll upload without token first
+        // Get a temporary upload URL
+        const response = await fetch(`${API_ENDPOINTS.S3_UPLOAD_URL}/profile`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            fileType: values.picture.type,
+          }),
+        });
+
+        if (response.ok) {
+          const { uploadUrl, accessUrl } = await response.json();
+
+          // Upload to S3
+          const uploadResponse = await fetch(uploadUrl, {
+            method: "PUT",
+            headers: {
+              "Content-Type": values.picture.type,
+            },
+            body: values.picture,
+          });
+
+          if (uploadResponse.ok) {
+            picturePath = accessUrl;
+          }
+        }
       }
-    } else {
-      console.error("Failed to register:", savedUserResponse.statusText);
+
+      // Register user with S3 URL
+      const savedUserResponse = await fetch(API_ENDPOINTS.REGISTER, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: values.firstName,
+          lastName: values.lastName,
+          email: values.email,
+          password: values.password,
+          location: values.location,
+          Year: values.Year,
+          picturePath: picturePath,
+        }),
+      });
+
+      if (savedUserResponse.ok) {
+        const savedUser = await savedUserResponse.json();
+        onSubmitProps.resetForm();
+        if (savedUser) {
+          setPageType("login");
+        }
+      } else {
+        console.error("Failed to register:", savedUserResponse.statusText);
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      alert("Failed to register. Please try again.");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -101,7 +152,9 @@ const Form = () => {
     if (isRegister) await register(values, onSubmitProps);
   };
 
- 
+  // const handleDiscordLogin = () => {
+  //   window.location.href = "http://localhost:3001/auth/discord";
+  // };
 
   return (
     <Formik
@@ -261,9 +314,10 @@ const Form = () => {
 
           <button
             type="submit"
-            className="w-full py-3 px-4 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+            disabled={uploading}
+            className="w-full py-3 px-4 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 disabled:from-grey-400 disabled:to-grey-400 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:cursor-not-allowed disabled:transform-none"
           >
-            {isLogin ? "LOGIN" : "REGISTER"}
+            {uploading ? "Uploading..." : isLogin ? "LOGIN" : "REGISTER"}
           </button>
 
           {/* Divider - Only show on login page */}
