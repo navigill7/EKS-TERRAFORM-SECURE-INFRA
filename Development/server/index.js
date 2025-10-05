@@ -3,7 +3,6 @@ import bodyParser from "body-parser";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
-// Remove multer import - we don't need it anymore
 import helmet from "helmet";
 import morgan from "morgan";
 import path from "path";
@@ -15,7 +14,7 @@ import otpRoutes from './routes/otp.js';
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
 import postRoutes from "./routes/posts.js";
-import s3Routes from "./routes/s3.js"; // NEW: Import S3 routes
+import s3Routes from "./routes/s3.js";
 import { register } from "./controllers/auth.js";
 import { createPost } from "./controllers/posts.js";
 import { verifyToken } from "./middleware/auth.js";
@@ -28,22 +27,21 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-app.use(express.json());
-app.use(helmet());
 
-app.use('/otp', otpRoutes);
-app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
-app.use(morgan("common"));
-app.use(bodyParser.json({ limit: "30mb", extended: true }));
-app.use(bodyParser.urlencoded({ limit: "30mb", extended: true }));
-
-// CORS configuration
+// CORS MUST BE FIRST - before any routes
 app.use(
   cors({
     origin: process.env.CLIENT_URL || "http://localhost:3000",
     credentials: true,
   })
 );
+
+app.use(express.json());
+app.use(helmet());
+app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
+app.use(morgan("common"));
+app.use(bodyParser.json({ limit: "30mb", extended: true }));
+app.use(bodyParser.urlencoded({ limit: "30mb", extended: true }));
 
 // Keep this for backwards compatibility (old images)
 app.use("/assets", express.static(path.join(__dirname, "public/assets")));
@@ -99,14 +97,15 @@ app.get("/auth/logout", (req, res) => {
 });
 
 /* ROUTES - No more file upload routes needed */
-app.post("/auth/register", register); // Updated - no multer
-app.post("/posts", verifyToken, createPost); // Updated - no multer
+app.post("/auth/register", register);
+app.post("/posts", verifyToken, createPost);
 
-/* API ROUTES */
+/* API ROUTES - All routes go here AFTER CORS */
 app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
 app.use("/posts", postRoutes);
-app.use("/s3", s3Routes); // NEW: S3 routes
+app.use("/s3", s3Routes);
+app.use("/otp", otpRoutes); // MOVED HERE - after CORS
 
 /* START SERVER */
 const PORT = process.env.PORT || 3001;
