@@ -26,7 +26,7 @@ const PostWidget = ({
   const likesCount = Object.keys(likes).length;
 
   const patchLike = async () => {
-    const response = await fetch(`http://localhost:3001/posts/${postId}/like`, {
+    const response = await fetch(`${API_ENDPOINTS.POSTS}/${postId}/like`, {
       method: "PATCH",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -36,6 +36,17 @@ const PostWidget = ({
     });
     const updatedPost = await response.json();
     dispatch(setPost({ post: updatedPost }));
+  };
+
+  // ✅ Helper function to get the correct image URL
+  const getImageUrl = (path) => {
+    if (!path) return null;
+    // If it's already a full URL (starts with http:// or https://), use it directly
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return path;
+    }
+    // Otherwise, it's an old local path, construct the localhost URL
+    return `http://localhost:3001/assets/${path}`;
   };
 
   return (
@@ -53,7 +64,11 @@ const PostWidget = ({
         <img
           className="w-full h-auto rounded-xl mt-4 shadow-sm"
           alt="post"
-          src={`http://localhost:3001/assets/${picturePath}`}
+          src={getImageUrl(picturePath)}
+          onError={(e) => {
+            console.error('Failed to load image:', picturePath);
+            e.target.style.display = 'none';
+          }}
         />
       )}
       
