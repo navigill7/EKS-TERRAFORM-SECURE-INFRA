@@ -4,6 +4,11 @@ export const API_ENDPOINTS = {
   // Auth endpoints
   LOGIN: `${API_BASE_URL}/auth/login`,
   REGISTER: `${API_BASE_URL}/auth/register`,
+  
+  // OTP endpoints
+  OTP_SEND: `${API_BASE_URL}/otp/send`,
+  OTP_VERIFY: `${API_BASE_URL}/otp/verify`,
+  OTP_RESEND: `${API_BASE_URL}/otp/resend`,
 
   // User endpoints
   USERS: `${API_BASE_URL}/users`,
@@ -20,13 +25,11 @@ export const API_ENDPOINTS = {
   // S3 endpoints
   S3_UPLOAD_URL: `${API_BASE_URL}/s3/upload-url`,
 
-  // Assets - Keep for backwards compatibility
+  // Assets
   ASSET: (filename) => {
-    // If it's already a full URL (S3), return as is
     if (filename.startsWith('http')) {
       return filename;
     }
-    // Otherwise, use local assets
     return `${API_BASE_URL}/assets/${filename}`;
   },
 };
