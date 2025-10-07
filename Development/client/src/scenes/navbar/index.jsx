@@ -1,3 +1,4 @@
+// scenes/navbar/index.jsx
 import { useState } from "react";
 import { 
   Search, 
@@ -16,10 +17,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { setMode, setLogout } from "state";
 import { useNavigate } from "react-router-dom";
 import FlexBetween from "components/FlexBetween";
+import SearchUsers from "components/SearchUsers";
 
 const Navbar = () => {
   const [isMobileMenuToggled, setIsMobileMenuToggled] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const user = useSelector((state) => state.user);
@@ -28,6 +31,10 @@ const Navbar = () => {
 
   const navigateToAlumni = () => {
     navigate("./alumniPage");
+  };
+
+  const handleSearchClick = () => {
+    setIsSearchOpen(true);
   };
 
   return (
@@ -43,19 +50,28 @@ const Navbar = () => {
               Uni-Link
             </h1>
             
-            {/* Desktop Search */}
-            <div className="hidden lg:flex items-center bg-grey-50 dark:bg-grey-700 rounded-full px-5 py-2.5 w-80 focus-within:ring-2 focus-within:ring-primary-500/50 transition-all duration-200">
-              <input
-                type="text"
-                placeholder="Search..."
-                className="flex-1 bg-transparent border-none outline-none text-grey-700 dark:text-grey-100 placeholder-grey-400 dark:placeholder-grey-500"
-              />
-              <Search className="w-5 h-5 text-grey-400 dark:text-grey-500" />
-            </div>
+            {/* Desktop Search - Now clickable */}
+            <button
+              onClick={handleSearchClick}
+              className="hidden lg:flex items-center bg-grey-50 dark:bg-grey-700 rounded-full px-5 py-2.5 w-80 hover:bg-grey-100 dark:hover:bg-grey-600 transition-all duration-200 group"
+            >
+              <span className="flex-1 text-left text-grey-400 dark:text-grey-500 group-hover:text-grey-500 dark:group-hover:text-grey-400">
+                Search users...
+              </span>
+              <Search className="w-5 h-5 text-grey-400 dark:text-grey-500 group-hover:text-primary-500 transition-colors duration-200" />
+            </button>
           </FlexBetween>
 
           {/* Desktop Icons */}
           <div className="hidden lg:flex items-center gap-4">
+            {/* Mobile Search Button - Visible on smaller screens */}
+            <button
+              onClick={handleSearchClick}
+              className="lg:hidden p-2.5 rounded-full hover:bg-grey-100 dark:hover:bg-grey-700 transition-colors duration-200"
+            >
+              <Search className="w-6 h-6 text-grey-700 dark:text-grey-100" />
+            </button>
+
             <button
               onClick={() => dispatch(setMode())}
               className="p-2.5 rounded-full hover:bg-grey-100 dark:hover:bg-grey-700 transition-colors duration-200"
@@ -120,14 +136,30 @@ const Navbar = () => {
           </div>
 
           {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsMobileMenuToggled(!isMobileMenuToggled)}
-            className="lg:hidden p-2 rounded-lg hover:bg-grey-100 dark:hover:bg-grey-700 transition-colors duration-200"
-          >
-            <Menu className="w-6 h-6 text-grey-700 dark:text-grey-100" />
-          </button>
+          <div className="lg:hidden flex items-center gap-2">
+            {/* Mobile Search Button */}
+            <button
+              onClick={handleSearchClick}
+              className="p-2 rounded-lg hover:bg-grey-100 dark:hover:bg-grey-700 transition-colors duration-200"
+            >
+              <Search className="w-6 h-6 text-grey-700 dark:text-grey-100" />
+            </button>
+
+            <button
+              onClick={() => setIsMobileMenuToggled(!isMobileMenuToggled)}
+              className="p-2 rounded-lg hover:bg-grey-100 dark:hover:bg-grey-700 transition-colors duration-200"
+            >
+              <Menu className="w-6 h-6 text-grey-700 dark:text-grey-100" />
+            </button>
+          </div>
         </FlexBetween>
       </nav>
+
+      {/* Search Modal */}
+      <SearchUsers 
+        isOpen={isSearchOpen} 
+        onClose={() => setIsSearchOpen(false)} 
+      />
 
       {/* Mobile Menu */}
       {isMobileMenuToggled && (
