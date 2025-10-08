@@ -1,5 +1,7 @@
+import mongoose from 'mongoose';
 import Message from '../models/Message.js';
 import Conversation from '../models/Conversation.js';
+import User from '../models/User.js';
 import { RedisService } from '../utils/redis.js';
 
 export const getConversations = async (req, res) => {
@@ -41,10 +43,12 @@ export const getConversations = async (req, res) => {
       })
     );
 
-    res.status(200).json(formattedConversations);
+    // Ensure we always return an array
+    res.status(200).json(Array.isArray(formattedConversations) ? formattedConversations : []);
   } catch (error) {
     console.error('Error fetching conversations:', error);
-    res.status(500).json({ message: 'Failed to fetch conversations' });
+    // Return empty array on error to prevent frontend crashes
+    res.status(200).json([]);
   }
 };
 
@@ -201,9 +205,6 @@ export const searchUsers = async (req, res) => {
     if (!query || query.length < 2) {
       return res.status(400).json({ message: 'Query too short' });
     }
-
-    const mongoose = require('mongoose');
-    const User = mongoose.model('User');
 
     const users = await User.find({
       _id: { $ne: userId },
