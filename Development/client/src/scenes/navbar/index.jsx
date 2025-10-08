@@ -18,11 +18,13 @@ import { setMode, setLogout } from "state";
 import { useNavigate } from "react-router-dom";
 import FlexBetween from "components/FlexBetween";
 import SearchUsers from "components/SearchUsers";
+import ChatInterface from "components/ChatInterface";
 
 const Navbar = () => {
   const [isMobileMenuToggled, setIsMobileMenuToggled] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const user = useSelector((state) => state.user);
@@ -35,6 +37,10 @@ const Navbar = () => {
 
   const handleSearchClick = () => {
     setIsSearchOpen(true);
+  };
+
+  const handleChatClick = () => {
+    setIsChatOpen(true);
   };
 
   return (
@@ -83,8 +89,13 @@ const Navbar = () => {
               )}
             </button>
 
-            <button className="p-2.5 rounded-full hover:bg-grey-100 dark:hover:bg-grey-700 transition-colors duration-200 relative">
+            {/* Chat Button - Opens ChatInterface */}
+            <button 
+              onClick={handleChatClick}
+              className="p-2.5 rounded-full hover:bg-grey-100 dark:hover:bg-grey-700 transition-colors duration-200 relative"
+            >
               <MessageCircle className="w-6 h-6 text-grey-700 dark:text-grey-100" />
+              {/* Optional: Add unread count badge here later */}
             </button>
 
             <button className="p-2.5 rounded-full hover:bg-grey-100 dark:hover:bg-grey-700 transition-colors duration-200 relative">
@@ -161,6 +172,12 @@ const Navbar = () => {
         onClose={() => setIsSearchOpen(false)} 
       />
 
+      {/* Chat Interface */}
+      <ChatInterface 
+        isOpen={isChatOpen} 
+        onClose={() => setIsChatOpen(false)} 
+      />
+
       {/* Mobile Menu */}
       {isMobileMenuToggled && (
         <>
@@ -190,7 +207,14 @@ const Navbar = () => {
                 )}
               </button>
 
-              <button className="p-3 rounded-full hover:bg-grey-100 dark:hover:bg-grey-700 transition-colors duration-200">
+              {/* Mobile Chat Button */}
+              <button 
+                onClick={() => {
+                  setIsMobileMenuToggled(false);
+                  handleChatClick();
+                }}
+                className="p-3 rounded-full hover:bg-grey-100 dark:hover:bg-grey-700 transition-colors duration-200"
+              >
                 <MessageCircle className="w-6 h-6 text-grey-700 dark:text-grey-100" />
               </button>
 
