@@ -1,5 +1,7 @@
+import mongoose from 'mongoose';
 import Message from '../models/Message.js';
 import Conversation from '../models/Conversation.js';
+import User from '../models/User.js';
 import { RedisService, REDIS_CHANNELS } from './redis.js';
 
 export const initializeSocket = (io) => {
@@ -68,7 +70,7 @@ export const initializeSocket = (io) => {
       console.log(`User ${userId} joined conversation ${conversationId}`);
 
       // Mark messages as read
-      await markMessagesAsRead(userId, conversationId);
+      await markMessagesAsRead(io, userId, conversationId);
     });
 
     // Leave conversation room
@@ -179,7 +181,7 @@ export const initializeSocket = (io) => {
 
     // Handle marking messages as read
     socket.on('messages:read', async ({ conversationId }) => {
-      await markMessagesAsRead(userId, conversationId);
+      await markMessagesAsRead(io, userId, conversationId);
     });
 
     // Get online status of specific users
@@ -221,7 +223,7 @@ async function stopTyping(userId, conversationId) {
   });
 }
 
-async function markMessagesAsRead(userId, conversationId) {
+async function markMessagesAsRead(io, userId, conversationId) {
   try {
     // Update database
     await Message.updateMany(
@@ -261,14 +263,9 @@ async function markMessagesAsRead(userId, conversationId) {
 }
 
 async function getUserInfo(userId) {
-  // This would import User model from main app
-  const mongoose = require('mongoose');
-  const User = mongoose.model('User');
   return await User.findById(userId).select('firstName lastName picturePath');
 }
 
 async function getUserWithFriends(userId) {
-  const mongoose = require('mongoose');
-  const User = mongoose.model('User');
   return await User.findById(userId).select('friends');
 }
