@@ -6,7 +6,7 @@ import {
   markAsRead,
   searchUsers,
   getOnlineStatus,
-} from '../controllers/chatController.js';
+} from '../controller/chatController.js';
 import { verifyToken } from '../middleware/auth.js';
 
 const router = express.Router();
