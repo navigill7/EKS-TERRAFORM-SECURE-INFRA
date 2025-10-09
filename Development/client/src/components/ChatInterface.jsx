@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Send, Search, MoreVertical, ArrowLeft, Loader, Image, Plus, UserPlus } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { io } from 'socket.io-client';
@@ -29,6 +29,7 @@ const ChatInterface = ({ isOpen, onClose }) => {
   const typingTimeoutRef = useRef(null);
   const userSearchTimeoutRef = useRef(null);
 
+  // Socket initialization
   useEffect(() => {
     if (!isOpen || !token) return;
 
@@ -41,62 +42,127 @@ const ChatInterface = ({ isOpen, onClose }) => {
       console.log('✅ Connected to chat service');
     });
 
-    newSocket.on('friends:online', ({ userIds }) => {
-      setOnlineUsers(new Set(userIds));
-    });
-
-    newSocket.on('user:online', ({ userId }) => {
-      setOnlineUsers(prev => new Set([...prev, userId]));
-    });
-
-    newSocket.on('user:offline', ({ userId }) => {
-      setOnlineUsers(prev => {
-        const updated = new Set(prev);
-        updated.delete(userId);
-        return updated;
-      });
-    });
-
-    newSocket.on('message:new', ({ message }) => {
-      setMessages(prev => [...prev, message]);
-      updateConversationLastMessage(message);
-      fetchConversations();
-    });
-
-    newSocket.on('typing:start', ({ conversationId, userId, user: typingUser }) => {
-      if (userId !== user._id) {
-        setTypingUsers(prev => ({
-          ...prev,
-          [conversationId]: typingUser,
-        }));
-      }
-    });
-
-    newSocket.on('typing:stop', ({ conversationId }) => {
-      setTypingUsers(prev => {
-        const updated = { ...prev };
-        delete updated[conversationId];
-        return updated;
-      });
+    newSocket.on('disconnect', () => {
+      console.log('❌ Disconnected from chat service');
     });
 
     setSocket(newSocket);
 
     return () => {
+      console.log('🔌 Closing socket connection');
       newSocket.close();
     };
-  }, [isOpen, token, user?._id]);
+  }, [isOpen, token]);
 
+  // Socket event listeners
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleFriendsOnline = ({ userIds }) => {
+      setOnlineUsers(new Set(userIds));
+    };
+
+    const handleUserOnline = ({ userId }) => {
+      setOnlineUsers(prev => new Set([...prev, userId]));
+    };
+
+    const handleUserOffline = ({ userId }) => {
+      setOnlineUsers(prev => {
+        const updated = new Set(prev);
+        updated.delete(userId);
+        return updated;
+      });
+    };
+
+    const handleNewMessage = ({ message, conversationId }) => {
+      console.log('📨 New message received:', message);
+      
+      // Update messages if we're viewing this conversation
+      if (selectedConversation && (selectedConversation._id === conversationId)) {
+        setMessages(prevMessages => {
+          // Prevent duplicates
+          const exists = prevMessages.some(msg => msg._id === message._id);
+          if (exists) {
+            console.log('⚠️ Duplicate message prevented');
+            return prevMessages;
+          }
+          return [...prevMessages, message];
+        });
+      }
+
+      // Update conversation list
+      setConversations(prevConversations => {
+        const updated = prevConversations.map(conv => {
+          if (conv._id === conversationId) {
+            return {
+              ...conv,
+              lastMessage: message,
+              lastMessageAt: message.createdAt,
+              // Don't increment unread if we're viewing this conversation
+              unreadCount: selectedConversation?._id === conversationId ? 0 : (conv.unreadCount || 0) + 1
+            };
+          }
+          return conv;
+        });
+        
+        // Sort by most recent message
+        return updated.sort((a, b) => {
+          const dateA = a.lastMessageAt ? new Date(a.lastMessageAt) : new Date(0);
+          const dateB = b.lastMessageAt ? new Date(b.lastMessageAt) : new Date(0);
+          return dateB - dateA;
+        });
+      });
+    };
+
+    const handleTypingStart = ({ conversationId, userId, user: typingUser }) => {
+      if (userId !== user._id && selectedConversation?._id === conversationId) {
+        setTypingUsers(prev => ({
+          ...prev,
+          [conversationId]: typingUser,
+        }));
+      }
+    };
+
+    const handleTypingStop = ({ conversationId }) => {
+      setTypingUsers(prev => {
+        const updated = { ...prev };
+        delete updated[conversationId];
+        return updated;
+      });
+    };
+
+    // Register all event listeners
+    socket.on('friends:online', handleFriendsOnline);
+    socket.on('user:online', handleUserOnline);
+    socket.on('user:offline', handleUserOffline);
+    socket.on('message:new', handleNewMessage);
+    socket.on('typing:start', handleTypingStart);
+    socket.on('typing:stop', handleTypingStop);
+
+    // Cleanup function
+    return () => {
+      socket.off('friends:online', handleFriendsOnline);
+      socket.off('user:online', handleUserOnline);
+      socket.off('user:offline', handleUserOffline);
+      socket.off('message:new', handleNewMessage);
+      socket.off('typing:start', handleTypingStart);
+      socket.off('typing:stop', handleTypingStop);
+    };
+  }, [socket, selectedConversation, user?._id]);
+
+  // Fetch conversations on open
   useEffect(() => {
     if (isOpen && token) {
       fetchConversations();
     }
   }, [isOpen, token]);
 
+  // Auto-scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
+  // User search debounce
   useEffect(() => {
     if (userSearchQuery.trim().length >= 2) {
       clearTimeout(userSearchTimeoutRef.current);
@@ -106,6 +172,12 @@ const ChatInterface = ({ isOpen, onClose }) => {
     } else {
       setUserSearchResults([]);
     }
+
+    return () => {
+      if (userSearchTimeoutRef.current) {
+        clearTimeout(userSearchTimeoutRef.current);
+      }
+    };
   }, [userSearchQuery]);
 
   const searchUsersForNewChat = async (query) => {
@@ -126,17 +198,18 @@ const ChatInterface = ({ isOpen, onClose }) => {
         setUserSearchResults(filtered);
       }
     } catch (error) {
-      console.error('Error searching users:', error);
+      console.error('❌ Error searching users:', error);
     } finally {
       setSearchingUsers(false);
     }
   };
 
-  const startNewConversation = async (selectedUser) => {
+  const startNewConversation = (selectedUser) => {
     setShowNewChat(false);
     setUserSearchQuery('');
     setUserSearchResults([]);
     
+    // Check if conversation already exists
     const existing = conversations.find(
       conv => conv.participant._id === selectedUser._id
     );
@@ -146,6 +219,7 @@ const ChatInterface = ({ isOpen, onClose }) => {
       return;
     }
     
+    // Create temporary conversation
     const tempConversation = {
       _id: `temp-${selectedUser._id}`,
       participant: selectedUser,
@@ -164,9 +238,12 @@ const ChatInterface = ({ isOpen, onClose }) => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
-      setConversations(data);
+      
+      // Ensure data is an array
+      setConversations(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error('Error fetching conversations:', error);
+      console.error('❌ Error fetching conversations:', error);
+      setConversations([]);
     } finally {
       setLoading(false);
     }
@@ -180,22 +257,29 @@ const ChatInterface = ({ isOpen, onClose }) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const data = await response.json();
-      setMessages(data.messages);
+      setMessages(data.messages || []);
       
-      socket?.emit('conversation:join', conversationId);
-      socket?.emit('messages:read', { conversationId });
+      // Join conversation room and mark as read
+      if (socket) {
+        socket.emit('conversation:join', conversationId);
+        socket.emit('messages:read', { conversationId });
+      }
     } catch (error) {
-      console.error('Error fetching messages:', error);
+      console.error('❌ Error fetching messages:', error);
+      setMessages([]);
     } finally {
       setLoading(false);
     }
   };
 
   const selectConversation = (conversation) => {
+    // Leave previous conversation room
     if (selectedConversation && !selectedConversation._id.startsWith('temp-')) {
       socket?.emit('conversation:leave', selectedConversation._id);
     }
+    
     setSelectedConversation(conversation);
+    
     if (!conversation._id.startsWith('temp-')) {
       fetchMessages(conversation._id);
     } else {
@@ -203,45 +287,57 @@ const ChatInterface = ({ isOpen, onClose }) => {
     }
   };
 
-  const sendMessage = () => {
-    if (!newMessage.trim() || !selectedConversation) return;
+  const sendMessage = useCallback((e) => {
+    // Prevent default if called from form submission
+    if (e && e.preventDefault) {
+      e.preventDefault();
+    }
+    
+    if (!newMessage.trim() || !selectedConversation || !socket) return;
 
-    socket?.emit('message:send', {
+    console.log('📤 Sending message...');
+
+    // Emit message via socket
+    socket.emit('message:send', {
       recipientId: selectedConversation.participant._id,
       content: newMessage.trim(),
     });
 
+    // Clear input immediately
     setNewMessage('');
+    
+    // Stop typing indicator
     stopTyping();
-  };
+  }, [newMessage, selectedConversation, socket]);
 
   const handleTyping = (e) => {
     setNewMessage(e.target.value);
 
-    if (!selectedConversation || selectedConversation._id.startsWith('temp-')) return;
+    if (!selectedConversation || selectedConversation._id.startsWith('temp-') || !socket) return;
 
-    socket?.emit('typing:start', { conversationId: selectedConversation._id });
+    // Start typing indicator
+    socket.emit('typing:start', { conversationId: selectedConversation._id });
 
-    clearTimeout(typingTimeoutRef.current);
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Stop typing after 3 seconds of no input
     typingTimeoutRef.current = setTimeout(() => {
       stopTyping();
     }, 3000);
   };
 
   const stopTyping = () => {
-    if (selectedConversation && !selectedConversation._id.startsWith('temp-')) {
-      socket?.emit('typing:stop', { conversationId: selectedConversation._id });
+    if (selectedConversation && !selectedConversation._id.startsWith('temp-') && socket) {
+      socket.emit('typing:stop', { conversationId: selectedConversation._id });
     }
-  };
-
-  const updateConversationLastMessage = (message) => {
-    setConversations(prev =>
-      prev.map(conv =>
-        conv._id === message.conversationId
-          ? { ...conv, lastMessage: message }
-          : conv
-      )
-    );
+    
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+    }
   };
 
   const scrollToBottom = () => {
@@ -251,6 +347,13 @@ const ChatInterface = ({ isOpen, onClose }) => {
   const formatTime = (date) => {
     const d = new Date(date);
     return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
   };
 
   const filteredConversations = conversations.filter(conv =>
@@ -270,6 +373,7 @@ const ChatInterface = ({ isOpen, onClose }) => {
 
       <div className="relative w-full sm:w-[900px] h-full sm:h-[600px] bg-white dark:bg-grey-800 sm:rounded-2xl shadow-2xl flex overflow-hidden animate-slide-in">
         
+        {/* Conversations Sidebar */}
         <div className={`${selectedConversation ? 'hidden sm:flex' : 'flex'} flex-col w-full sm:w-80 border-r border-grey-200 dark:border-grey-700`}>
           <div className="p-4 border-b border-grey-200 dark:border-grey-700">
             <div className="flex items-center justify-between mb-4">
@@ -371,6 +475,7 @@ const ChatInterface = ({ isOpen, onClose }) => {
           </div>
         </div>
 
+        {/* New Chat Modal */}
         {showNewChat && (
           <div className="absolute inset-0 bg-white dark:bg-grey-800 z-10 flex flex-col">
             <div className="p-4 border-b border-grey-200 dark:border-grey-700">
@@ -448,8 +553,10 @@ const ChatInterface = ({ isOpen, onClose }) => {
           </div>
         )}
 
+        {/* Chat Area */}
         {selectedConversation ? (
           <div className="flex-1 flex flex-col">
+            {/* Chat Header */}
             <div className="p-4 border-b border-grey-200 dark:border-grey-700 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <button
@@ -482,6 +589,7 @@ const ChatInterface = ({ isOpen, onClose }) => {
               </button>
             </div>
 
+            {/* Messages Area */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {loading ? (
                 <div className="flex items-center justify-center h-full">
@@ -495,11 +603,11 @@ const ChatInterface = ({ isOpen, onClose }) => {
                 </div>
               ) : (
                 <>
-                  {messages.map((msg, idx) => {
+                  {messages.map((msg) => {
                     const isOwn = msg.sender._id === user._id;
                     return (
                       <div
-                        key={idx}
+                        key={msg._id}
                         className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
                       >
                         <div className={`max-w-[70%] ${isOwn ? 'order-2' : 'order-1'}`}>
@@ -538,9 +646,13 @@ const ChatInterface = ({ isOpen, onClose }) => {
               )}
             </div>
 
+            {/* Message Input */}
             <div className="p-4 border-t border-grey-200 dark:border-grey-700">
-              <div className="flex items-center gap-2">
-                <button className="p-2 rounded-full hover:bg-grey-100 dark:hover:bg-grey-700 transition-colors">
+              <form onSubmit={sendMessage} className="flex items-center gap-2">
+                <button 
+                  type="button"
+                  className="p-2 rounded-full hover:bg-grey-100 dark:hover:bg-grey-700 transition-colors"
+                >
                   <Image className="w-5 h-5 text-grey-500" />
                 </button>
                 <input
@@ -548,17 +660,17 @@ const ChatInterface = ({ isOpen, onClose }) => {
                   placeholder="Type a message..."
                   value={newMessage}
                   onChange={handleTyping}
-                  onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                  onKeyPress={handleKeyPress}
                   className="flex-1 px-4 py-2 rounded-full bg-grey-100 dark:bg-grey-700 border-none outline-none text-grey-700 dark:text-grey-100"
                 />
                 <button
-                  onClick={sendMessage}
+                  type="submit"
                   disabled={!newMessage.trim()}
-                  className="p-2 rounded-full bg-primary-500 hover:bg-primary-600 disabled:bg-grey-300 dark:disabled:bg-grey-700 transition-colors"
+                  className="p-2 rounded-full bg-primary-500 hover:bg-primary-600 disabled:bg-grey-300 dark:disabled:bg-grey-700 transition-colors disabled:cursor-not-allowed"
                 >
                   <Send className="w-5 h-5 text-white" />
                 </button>
-              </div>
+              </form>
             </div>
           </div>
         ) : (
