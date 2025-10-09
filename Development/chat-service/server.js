@@ -7,6 +7,10 @@ import dotenv from 'dotenv';
 import chatRoutes from './routes/chat.js';
 import { socketAuth } from './middleware/auth.js';
 import { initializeSocket } from './utils/socket.js';
+// Import models to register them
+import './models/User.js';
+import './models/Message.js';
+import './models/Conversation.js';
 
 dotenv.config();
 
