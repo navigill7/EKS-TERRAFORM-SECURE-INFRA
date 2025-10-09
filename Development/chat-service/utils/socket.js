@@ -6,11 +6,18 @@ import { RedisService, REDIS_CHANNELS } from './redis.js';
 
 export const initializeSocket = (io) => {
 
+  // Subscribe to Redis Pub/Sub channels for cross-server communication
   RedisService.subscribe(REDIS_CHANNELS.messageNew, (data) => {
-    io.to(data.conversationId).emit('message:new', data);
+    console.log('📢 Broadcasting new message to conversation:', data.conversationId);
+    // Emit to all clients in the conversation room
+    io.to(data.conversationId).emit('message:new', {
+      message: data.message,
+      conversationId: data.conversationId
+    });
   });
 
   RedisService.subscribe(REDIS_CHANNELS.typingStart, (data) => {
+    // Emit typing indicator to conversation room
     io.to(data.conversationId).emit('typing:start', {
       conversationId: data.conversationId,
       userId: data.userId,
@@ -26,58 +33,76 @@ export const initializeSocket = (io) => {
   });
 
   RedisService.subscribe(REDIS_CHANNELS.userOnline, (data) => {
+    console.log('👤 User online:', data.userId);
     io.emit('user:online', { userId: data.userId });
   });
 
   RedisService.subscribe(REDIS_CHANNELS.userOffline, (data) => {
+    console.log('👤 User offline:', data.userId);
     io.emit('user:offline', { userId: data.userId });
   });
 
+  RedisService.subscribe(REDIS_CHANNELS.messageRead, (data) => {
+    io.to(data.conversationId).emit('messages:read', {
+      conversationId: data.conversationId,
+      userId: data.userId,
+    });
+  });
+
+  // Handle socket connections
   io.on('connection', async (socket) => {
     const userId = socket.userId;
-    console.log(`User connected: ${userId}`);
+    console.log(`✅ User connected: ${userId}, Socket ID: ${socket.id}`);
 
     try {
       // Store socket mapping in Redis
       await RedisService.setUserSocket(userId, socket.id);
       await RedisService.setUserOnline(userId);
 
-      // Join user to their personal room
+      // Join user to their personal room (for direct notifications)
       socket.join(userId);
 
-      // Publish online status
+      // Publish online status to all servers
       await RedisService.publish(REDIS_CHANNELS.userOnline, { userId });
 
-      // Send current online friends
+      // Send current online friends to the connected user
       const user = await getUserWithFriends(userId);
-      if (user && user.friends) {
+      if (user && user.friends && user.friends.length > 0) {
         const friendIds = user.friends.map(f => f.toString());
         const onlineFriends = await RedisService.getOnlineFriends(friendIds);
         socket.emit('friends:online', { userIds: onlineFriends });
       }
 
-      // Get total unread count
+      // Send total unread count
       const totalUnread = await RedisService.getTotalUnread(userId);
       socket.emit('unread:total', { count: totalUnread });
 
     } catch (error) {
-      console.error('Error on connection:', error);
+      console.error('❌ Error on connection:', error);
     }
 
     // Join conversation room
     socket.on('conversation:join', async (conversationId) => {
-      socket.join(conversationId);
-      console.log(`User ${userId} joined conversation ${conversationId}`);
+      try {
+        socket.join(conversationId);
+        console.log(`📥 User ${userId} joined conversation ${conversationId}`);
 
-      // Mark messages as read
-      await markMessagesAsRead(io, userId, conversationId);
+        // Mark messages as read
+        await markMessagesAsRead(io, userId, conversationId);
+      } catch (error) {
+        console.error('❌ Error joining conversation:', error);
+      }
     });
 
     // Leave conversation room
     socket.on('conversation:leave', async (conversationId) => {
-      socket.leave(conversationId);
-      await RedisService.removeTyping(conversationId, userId);
-      console.log(`User ${userId} left conversation ${conversationId}`);
+      try {
+        socket.leave(conversationId);
+        await RedisService.removeTyping(conversationId, userId);
+        console.log(`📤 User ${userId} left conversation ${conversationId}`);
+      } catch (error) {
+        console.error('❌ Error leaving conversation:', error);
+      }
     });
 
     // Handle sending messages
@@ -89,17 +114,20 @@ export const initializeSocket = (io) => {
           return socket.emit('error', { message: 'Message content required' });
         }
 
+        console.log(`💬 Message from ${userId} to ${recipientId}: "${content.substring(0, 30)}..."`);
+
         // Get or create conversation
         const conversation = await Conversation.getOrCreate(userId, recipientId);
+        console.log(`📝 Conversation ID: ${conversation._id}`);
 
-        // Create message
+        // Create message in database
         const message = await Message.create({
           conversationId: conversation._id,
           sender: userId,
           content: content.trim(),
         });
 
-        // Update conversation
+        // Update conversation metadata
         conversation.lastMessage = message._id;
         conversation.lastMessageAt = new Date();
         conversation.unreadCount.set(
@@ -108,47 +136,51 @@ export const initializeSocket = (io) => {
         );
         await conversation.save();
 
-        // Populate sender info
+        // Populate sender info for the message
         await message.populate('sender', 'firstName lastName picturePath');
 
-        // Cache message in Redis
-        await RedisService.cacheMessage(conversation._id.toString(), {
+        // Prepare message object for caching and broadcasting
+        const messageObj = {
           _id: message._id,
-          sender: message.sender,
+          conversationId: conversation._id,
+          sender: {
+            _id: message.sender._id,
+            firstName: message.sender.firstName,
+            lastName: message.sender.lastName,
+            picturePath: message.sender.picturePath
+          },
           content: message.content,
           createdAt: message.createdAt,
           read: message.read,
-        });
+        };
+
+        // Cache message in Redis for faster retrieval
+        await RedisService.cacheMessage(conversation._id.toString(), messageObj);
 
         // Increment unread count in Redis
         await RedisService.incrementUnread(recipientId, conversation._id.toString());
 
-        // Publish message to all servers
+        // Publish message to Redis for broadcasting to all servers
         await RedisService.publish(REDIS_CHANNELS.messageNew, {
           conversationId: conversation._id.toString(),
-          message: {
-            _id: message._id,
-            conversationId: conversation._id,
-            sender: message.sender,
-            content: message.content,
-            createdAt: message.createdAt,
-            read: message.read,
-          },
+          message: messageObj,
         });
 
-        // Stop typing
-        await stopTyping(userId, conversation._id.toString());
+        // Stop typing indicator for sender
+        await stopTyping(socket.id, userId, conversation._id.toString());
 
-        // Update sender's unread total
+        // Update sender's total unread count (in case they have other unread messages)
         const totalUnread = await RedisService.getTotalUnread(userId);
         socket.emit('unread:total', { count: totalUnread });
 
-        // Update recipient's unread total
+        // Update recipient's total unread count
         const recipientUnread = await RedisService.getTotalUnread(recipientId);
         io.to(recipientId).emit('unread:total', { count: recipientUnread });
 
+        console.log(`✅ Message sent successfully`);
+
       } catch (error) {
-        console.error('Error sending message:', error);
+        console.error('❌ Error sending message:', error);
         socket.emit('error', { message: 'Failed to send message' });
       }
     });
@@ -160,23 +192,30 @@ export const initializeSocket = (io) => {
 
         // Get user info for typing indicator
         const user = await getUserInfo(userId);
+        
+        if (!user) {
+          console.error('❌ User not found for typing indicator:', userId);
+          return;
+        }
 
+        // Publish typing indicator to Redis
         await RedisService.publish(REDIS_CHANNELS.typingStart, {
           conversationId,
           userId,
+          socketId: socket.id,
           user: {
             firstName: user.firstName,
             lastName: user.lastName,
           },
         });
       } catch (error) {
-        console.error('Error on typing start:', error);
+        console.error('❌ Error on typing start:', error);
       }
     });
 
     // Handle typing stop
     socket.on('typing:stop', async ({ conversationId }) => {
-      await stopTyping(userId, conversationId);
+      await stopTyping(socket.id, userId, conversationId);
     });
 
     // Handle marking messages as read
@@ -187,46 +226,70 @@ export const initializeSocket = (io) => {
     // Get online status of specific users
     socket.on('users:status', async ({ userIds }) => {
       try {
+        if (!Array.isArray(userIds)) {
+          return socket.emit('error', { message: 'userIds must be an array' });
+        }
+
         const onlineUsers = await RedisService.getOnlineFriends(userIds);
         socket.emit('users:status', { onlineUsers });
       } catch (error) {
-        console.error('Error getting user status:', error);
+        console.error('❌ Error getting user status:', error);
+        socket.emit('error', { message: 'Failed to get user status' });
       }
     });
 
     // Handle disconnect
     socket.on('disconnect', async () => {
-      console.log(`User disconnected: ${userId}`);
+      console.log(`❌ User disconnected: ${userId}, Socket ID: ${socket.id}`);
 
       try {
+        // Remove socket mapping from Redis
         await RedisService.removeUserSocket(userId, socket.id);
         await RedisService.setUserOffline(userId);
 
-        // Publish offline status
+        // Publish offline status to all servers
         await RedisService.publish(REDIS_CHANNELS.userOffline, { userId });
 
         // Remove from all typing indicators
-        // Note: Redis TTL will auto-expire typing keys
+        // Note: Redis TTL will auto-expire typing keys after 5 seconds
       } catch (error) {
-        console.error('Error on disconnect:', error);
+        console.error('❌ Error on disconnect:', error);
       }
     });
+
+    // Handle errors
+    socket.on('error', (error) => {
+      console.error('❌ Socket error:', error);
+    });
+  });
+
+  // Handle connection errors
+  io.on('connection_error', (error) => {
+    console.error('❌ Connection error:', error);
   });
 };
 
-// Helper functions
-async function stopTyping(userId, conversationId) {
-  await RedisService.removeTyping(conversationId, userId);
-  await RedisService.publish(REDIS_CHANNELS.typingStop, {
-    conversationId,
-    userId,
-  });
+// Helper function to stop typing indicator
+async function stopTyping(socketId, userId, conversationId) {
+  try {
+    await RedisService.removeTyping(conversationId, userId);
+    await RedisService.publish(REDIS_CHANNELS.typingStop, {
+      conversationId,
+      userId,
+      socketId,
+    });
+  } catch (error) {
+    console.error('❌ Error stopping typing:', error);
+  }
 }
 
+// Helper function to mark messages as read
 async function markMessagesAsRead(io, userId, conversationId) {
   try {
-    // Update database
-    await Message.updateMany(
+    console.log(`👁️ Marking messages as read for user ${userId} in conversation ${conversationId}`);
+
+    // Update messages in database
+    const result = await Message.updateMany(
       {
         conversationId,
         sender: { $ne: userId },
@@ -238,7 +301,11 @@ async function markMessagesAsRead(io, userId, conversationId) {
       }
     );
 
-    // Update conversation unread count
+    if (result.modifiedCount > 0) {
+      console.log(`✅ Marked ${result.modifiedCount} messages as read`);
+    }
+
+    // Update conversation unread count in database
     const conversation = await Conversation.findById(conversationId);
     if (conversation) {
       conversation.unreadCount.set(userId, 0);
@@ -248,24 +315,51 @@ async function markMessagesAsRead(io, userId, conversationId) {
     // Reset Redis unread count
     await RedisService.resetUnread(userId, conversationId);
 
-    // Get updated total unread
+    // Get and emit updated total unread count to user
     const totalUnread = await RedisService.getTotalUnread(userId);
     io.to(userId).emit('unread:total', { count: totalUnread });
 
-    // Notify other participants
+    // Notify other participants that messages were read
     await RedisService.publish(REDIS_CHANNELS.messageRead, {
       conversationId,
       userId,
     });
+
   } catch (error) {
-    console.error('Error marking messages as read:', error);
+    console.error('❌ Error marking messages as read:', error);
   }
 }
 
+// Helper function to get user info
 async function getUserInfo(userId) {
-  return await User.findById(userId).select('firstName lastName picturePath');
+  try {
+    const user = await User.findById(userId).select('firstName lastName picturePath');
+    
+    if (!user) {
+      console.error('❌ User not found:', userId);
+      return null;
+    }
+
+    return user;
+  } catch (error) {
+    console.error('❌ Error getting user info:', error);
+    return null;
+  }
 }
 
+// Helper function to get user with friends
 async function getUserWithFriends(userId) {
-  return await User.findById(userId).select('friends');
+  try {
+    const user = await User.findById(userId).select('friends');
+    
+    if (!user) {
+      console.error('❌ User not found:', userId);
+      return null;
+    }
+
+    return user;
+  } catch (error) {
+    console.error('❌ Error getting user with friends:', error);
+    return null;
+  }
 }
