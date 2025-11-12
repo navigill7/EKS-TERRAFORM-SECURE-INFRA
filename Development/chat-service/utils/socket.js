@@ -4,12 +4,35 @@ import Conversation from '../models/Conversation.js';
 import User from '../models/User.js';
 import { RedisService, REDIS_CHANNELS } from './redis.js';
 
+// Notification channel
+const NOTIFICATION_CHANNELS = {
+  MESSAGE: 'notification:message',
+};
+
+// Helper to publish message notification
+const publishMessageNotification = async (recipientId, senderId, senderName, senderPicture, content, conversationId) => {
+  try {
+    await RedisService.publish(NOTIFICATION_CHANNELS.MESSAGE, {
+      userId: recipientId,
+      actorId: senderId,
+      actorName: senderName,
+      actorPicture: senderPicture,
+      relatedId: conversationId,
+      metadata: {
+        messagePreview: content.substring(0, 50),
+      },
+    });
+    console.log(`📢 Published message notification for user ${recipientId}`);
+  } catch (error) {
+    console.error('❌ Error publishing message notification:', error);
+  }
+};
+
 export const initializeSocket = (io) => {
 
   // Subscribe to Redis Pub/Sub channels for cross-server communication
   RedisService.subscribe(REDIS_CHANNELS.messageNew, (data) => {
     console.log('📢 Broadcasting new message to conversation:', data.conversationId);
-    // Emit to all clients in the conversation room
     io.to(data.conversationId).emit('message:new', {
       message: data.message,
       conversationId: data.conversationId
@@ -17,7 +40,6 @@ export const initializeSocket = (io) => {
   });
 
   RedisService.subscribe(REDIS_CHANNELS.typingStart, (data) => {
-    // Emit typing indicator to conversation room
     io.to(data.conversationId).emit('typing:start', {
       conversationId: data.conversationId,
       userId: data.userId,
@@ -105,7 +127,7 @@ export const initializeSocket = (io) => {
       }
     });
 
-    // Handle sending messages
+    // ✅ SINGLE message:send handler (removed duplicate)
     socket.on('message:send', async (data) => {
       try {
         const { recipientId, content } = data;
@@ -159,6 +181,16 @@ export const initializeSocket = (io) => {
 
         // Increment unread count in Redis
         await RedisService.incrementUnread(recipientId, conversation._id.toString());
+
+        // 🆕 PUBLISH MESSAGE NOTIFICATION (Added here)
+        await publishMessageNotification(
+          recipientId,
+          userId,
+          `${message.sender.firstName} ${message.sender.lastName}`,
+          message.sender.picturePath,
+          content,
+          conversation._id.toString()
+        );
 
         // Publish message to Redis for broadcasting to all servers
         await RedisService.publish(REDIS_CHANNELS.messageNew, {
@@ -250,8 +282,6 @@ export const initializeSocket = (io) => {
         // Publish offline status to all servers
         await RedisService.publish(REDIS_CHANNELS.userOffline, { userId });
 
-        // Remove from all typing indicators
-        // Note: Redis TTL will auto-expire typing keys after 5 seconds
       } catch (error) {
         console.error('❌ Error on disconnect:', error);
       }
