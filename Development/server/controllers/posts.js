@@ -1,10 +1,11 @@
 import Post from "../models/Post.js";
 import User from "../models/User.js";
+import { publishNotificationEvent, NOTIFICATION_CHANNELS } from "../config/redis.js";
 
-/* CREATE POST */
+
 export const createPost = async (req, res) => {
   try {
-    const { userId, description, picturePath } = req.body; // picturePath is S3 URL now
+    const { userId, description, picturePath } = req.body;
     
     const user = await User.findById(userId);
     
@@ -15,14 +16,29 @@ export const createPost = async (req, res) => {
       location: user.location,
       description,
       userPicturePath: user.picturePath,
-      picturePath: picturePath || "", // S3 URL
+      picturePath: picturePath || "",
       likes: {},
       comments: [],
     });
     
     await newPost.save();
 
-    // Return all posts
+    // 🆕 Notify all friends about the new post
+    if (user.friends && user.friends.length > 0) {
+      for (const friendId of user.friends) {
+        await publishNotificationEvent(NOTIFICATION_CHANNELS.FRIEND_POST, {
+          userId: friendId,
+          actorId: userId,
+          actorName: `${user.firstName} ${user.lastName}`,
+          actorPicture: user.picturePath,
+          relatedId: newPost._id,
+          metadata: {
+            postDescription: description?.substring(0, 100),
+          },
+        });
+      }
+    }
+
     const posts = await Post.find();
     res.status(201).json(posts);
   } catch (err) {
@@ -63,6 +79,19 @@ export const likePost = async (req, res) => {
       post.likes.delete(userId);
     } else {
       post.likes.set(userId, true);
+      
+      // 🆕 Send notification to post owner (only if someone else liked it)
+      if (post.userId !== userId) {
+        const liker = await User.findById(userId);
+        
+        await publishNotificationEvent(NOTIFICATION_CHANNELS.LIKE, {
+          userId: post.userId, // Post owner
+          actorId: userId,      // Person who liked
+          actorName: `${liker.firstName} ${liker.lastName}`,
+          actorPicture: liker.picturePath,
+          relatedId: post._id,
+        });
+      }
     }
 
     const updatedPost = await Post.findByIdAndUpdate(
