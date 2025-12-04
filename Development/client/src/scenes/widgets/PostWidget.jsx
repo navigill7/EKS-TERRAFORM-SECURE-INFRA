@@ -46,7 +46,7 @@ const PostWidget = ({
       return path;
     }
     // Otherwise, it's an old local path, construct the localhost URL
-    return `http://localhost:3001/assets/${path}`;
+    return `http://localhsot:3001/assets/${path}`;
   };
 
   return (

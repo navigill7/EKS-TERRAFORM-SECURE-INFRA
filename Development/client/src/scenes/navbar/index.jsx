@@ -1,11 +1,10 @@
-// scenes/navbar/index.jsx
+// client/src/scenes/navbar/index.jsx (UPDATED)
 import { useState } from "react";
 import { 
   Search, 
   MessageCircle, 
   Sun, 
   Moon, 
-  Bell, 
   Menu, 
   X, 
   Users, 
@@ -19,6 +18,8 @@ import { useNavigate } from "react-router-dom";
 import FlexBetween from "components/FlexBetween";
 import SearchUsers from "components/SearchUsers";
 import ChatInterface from "components/ChatInterface";
+import NotificationBell from "components/NotificationBell"; // 🆕 NEW IMPORT
+import NotificationCenter from "components/NotificationCenter"; // 🆕 NEW IMPORT
 
 const Navbar = () => {
   const [isMobileMenuToggled, setIsMobileMenuToggled] = useState(false);
@@ -56,7 +57,7 @@ const Navbar = () => {
               Uni-Link
             </h1>
             
-            {/* Desktop Search - Now clickable */}
+            {/* Desktop Search */}
             <button
               onClick={handleSearchClick}
               className="hidden lg:flex items-center bg-grey-50 dark:bg-grey-700 rounded-full px-5 py-2.5 w-80 hover:bg-grey-100 dark:hover:bg-grey-600 transition-all duration-200 group"
@@ -70,7 +71,7 @@ const Navbar = () => {
 
           {/* Desktop Icons */}
           <div className="hidden lg:flex items-center gap-4">
-            {/* Mobile Search Button - Visible on smaller screens */}
+            {/* Mobile Search Button */}
             <button
               onClick={handleSearchClick}
               className="lg:hidden p-2.5 rounded-full hover:bg-grey-100 dark:hover:bg-grey-700 transition-colors duration-200"
@@ -89,18 +90,15 @@ const Navbar = () => {
               )}
             </button>
 
-            {/* Chat Button - Opens ChatInterface */}
+            {/* 🆕 NOTIFICATION BELL */}
+            <NotificationBell />
+
+            {/* Chat Button */}
             <button 
               onClick={handleChatClick}
               className="p-2.5 rounded-full hover:bg-grey-100 dark:hover:bg-grey-700 transition-colors duration-200 relative"
             >
               <MessageCircle className="w-6 h-6 text-grey-700 dark:text-grey-100" />
-              {/* Optional: Add unread count badge here later */}
-            </button>
-
-            <button className="p-2.5 rounded-full hover:bg-grey-100 dark:hover:bg-grey-700 transition-colors duration-200 relative">
-              <Bell className="w-6 h-6 text-grey-700 dark:text-grey-100" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-primary-500 rounded-full"></span>
             </button>
 
             <button
@@ -156,6 +154,9 @@ const Navbar = () => {
               <Search className="w-6 h-6 text-grey-700 dark:text-grey-100" />
             </button>
 
+            {/* 🆕 MOBILE NOTIFICATION BELL */}
+            <NotificationBell />
+
             <button
               onClick={() => setIsMobileMenuToggled(!isMobileMenuToggled)}
               className="p-2 rounded-lg hover:bg-grey-100 dark:hover:bg-grey-700 transition-colors duration-200"
@@ -177,6 +178,9 @@ const Navbar = () => {
         isOpen={isChatOpen} 
         onClose={() => setIsChatOpen(false)} 
       />
+
+      {/* 🆕 NOTIFICATION CENTER */}
+      <NotificationCenter />
 
       {/* Mobile Menu */}
       {isMobileMenuToggled && (
@@ -216,11 +220,6 @@ const Navbar = () => {
                 className="p-3 rounded-full hover:bg-grey-100 dark:hover:bg-grey-700 transition-colors duration-200"
               >
                 <MessageCircle className="w-6 h-6 text-grey-700 dark:text-grey-100" />
-              </button>
-
-              <button className="p-3 rounded-full hover:bg-grey-100 dark:hover:bg-grey-700 transition-colors duration-200 relative">
-                <Bell className="w-6 h-6 text-grey-700 dark:text-grey-100" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-primary-500 rounded-full"></span>
               </button>
 
               <button
