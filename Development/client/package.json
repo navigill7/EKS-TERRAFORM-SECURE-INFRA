@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@reduxjs/toolkit": "^2.2.1",
+    "@stomp/stompjs": "^7.2.1",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
@@ -19,6 +20,7 @@
     "react-scripts": "5.0.1",
     "redux-persist": "^6.0.0",
     "socket.io-client": "^4.8.1",
+    "sockjs-client": "^1.6.1",
     "styled-components": "^6.1.8",
     "web-vitals": "^2.1.4",
     "yup": "^1.4.0"
