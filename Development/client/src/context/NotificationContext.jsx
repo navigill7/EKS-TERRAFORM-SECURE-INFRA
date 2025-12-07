@@ -1,7 +1,8 @@
-// client/src/context/NotificationContext.jsx
+// client/src/context/NotificationContext.jsx (FIXED)
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useSelector } from 'react-redux';
-import io from 'socket.io-client';
+import { Client } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
 
 const NotificationContext = createContext();
 
@@ -16,7 +17,7 @@ export const useNotifications = () => {
 const NOTIFICATION_SERVICE_URL = process.env.REACT_APP_NOTIFICATION_SERVICE_URL || 'http://localhost:4001';
 
 export const NotificationProvider = ({ children }) => {
-  const [socket, setSocket] = useState(null);
+  const [stompClient, setStompClient] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
@@ -25,70 +26,119 @@ export const NotificationProvider = ({ children }) => {
   const token = useSelector((state) => state.token);
   const user = useSelector((state) => state.user);
 
-  // Initialize socket connection
+  // Initialize STOMP connection
   useEffect(() => {
-    if (!token || !user) return;
+    if (!token || !user) {
+      console.log('⏸️ Skipping WebSocket - no token or user');
+      return;
+    }
 
-    const newSocket = io(NOTIFICATION_SERVICE_URL, {
-      auth: { token },
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionAttempts: 5,
-    });
+    console.log('🔌 Initializing STOMP connection...');
 
-    newSocket.on('connect', () => {
-      console.log('✅ Connected to notification service');
-      setIsConnected(true);
-    });
-
-    newSocket.on('disconnect', () => {
-      console.log('❌ Disconnected from notification service');
-      setIsConnected(false);
-    });
-
-    // Handle new notification
-    newSocket.on('notification:new', (notification) => {
-      console.log('🔔 New notification:', notification);
-      setNotifications((prev) => [notification, ...prev]);
-      setUnreadCount((prev) => prev + 1);
+    // Create STOMP client with SockJS
+    const client = new Client({
+      webSocketFactory: () => new SockJS(`${NOTIFICATION_SERVICE_URL}/ws`),
       
-      // Show toast notification
-      showToast(notification);
+      connectHeaders: {
+        Authorization: `Bearer ${token}`,
+      },
+
+      debug: (str) => {
+        console.log('STOMP Debug:', str);
+      },
+
+      reconnectDelay: 5000,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
+
+      onConnect: () => {
+        console.log('✅ Connected to notification service');
+        setIsConnected(true);
+
+        // Subscribe to user-specific notifications
+        client.subscribe(`/user/queue/notification:new`, (message) => {
+          console.log('🔔 New notification:', message);
+          try {
+            const notification = JSON.parse(message.body);
+            setNotifications((prev) => [notification, ...prev]);
+            setUnreadCount((prev) => prev + 1);
+            showToast(notification);
+          } catch (error) {
+            console.error('Error parsing notification:', error);
+          }
+        });
+
+        // Subscribe to notification updates
+        client.subscribe(`/user/queue/notification:updated`, (message) => {
+          console.log('🔄 Notification updated:', message);
+          try {
+            const notification = JSON.parse(message.body);
+            setNotifications((prev) =>
+              prev.map((n) => (n._id === notification._id ? notification : n))
+            );
+          } catch (error) {
+            console.error('Error parsing updated notification:', error);
+          }
+        });
+
+        // Subscribe to unread count updates
+        client.subscribe(`/user/queue/notification:unread-count`, (message) => {
+          console.log('📊 Unread count update:', message);
+          try {
+            const data = JSON.parse(message.body);
+            setUnreadCount(data.count);
+          } catch (error) {
+            console.error('Error parsing unread count:', error);
+          }
+        });
+
+        // Subscribe to read confirmations
+        client.subscribe(`/user/queue/notification:read-success`, (message) => {
+          console.log('✅ Read confirmation:', message);
+          try {
+            const data = JSON.parse(message.body);
+            setNotifications((prev) =>
+              prev.map((n) =>
+                n._id === data.notificationId ? { ...n, read: true } : n
+              )
+            );
+          } catch (error) {
+            console.error('Error parsing read confirmation:', error);
+          }
+        });
+
+        // Subscribe to all read confirmations
+        client.subscribe(`/user/queue/notification:all-read-success`, () => {
+          console.log('✅ All notifications marked as read');
+          setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+          setUnreadCount(0);
+        });
+      },
+
+      onStompError: (frame) => {
+        console.error('❌ STOMP error:', frame);
+        setIsConnected(false);
+      },
+
+      onWebSocketClose: () => {
+        console.log('🔌 WebSocket closed');
+        setIsConnected(false);
+      },
+
+      onDisconnect: () => {
+        console.log('❌ Disconnected from notification service');
+        setIsConnected(false);
+      },
     });
 
-    // Handle notification update (grouped)
-    newSocket.on('notification:updated', (notification) => {
-      console.log('🔄 Notification updated:', notification);
-      setNotifications((prev) =>
-        prev.map((n) => (n._id === notification._id ? notification : n))
-      );
-    });
-
-    // Handle unread count
-    newSocket.on('notification:unread-count', ({ count }) => {
-      console.log('📊 Unread count:', count);
-      setUnreadCount(count);
-    });
-
-    // Handle read confirmation
-    newSocket.on('notification:read-success', ({ notificationId }) => {
-      setNotifications((prev) =>
-        prev.map((n) =>
-          n._id === notificationId ? { ...n, read: true } : n
-        )
-      );
-    });
-
-    // Handle all read confirmation
-    newSocket.on('notification:all-read-success', () => {
-      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-      setUnreadCount(0);
-    });
-
-    setSocket(newSocket);
+    client.activate();
+    setStompClient(client);
 
     return () => {
-      newSocket.close();
+      console.log('🔌 Closing STOMP connection');
+      if (client) {
+        client.deactivate();
+      }
     };
   }, [token, user]);
 
@@ -100,8 +150,11 @@ export const NotificationProvider = ({ children }) => {
       const response = await fetch(`${NOTIFICATION_SERVICE_URL}/api/notifications?limit=50`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await response.json();
-      setNotifications(data.notifications || []);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data.notifications || []);
+      }
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
     }
@@ -115,8 +168,11 @@ export const NotificationProvider = ({ children }) => {
       const response = await fetch(`${NOTIFICATION_SERVICE_URL}/api/notifications/unread-count`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await response.json();
-      setUnreadCount(data.count);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setUnreadCount(data.count);
+      }
     } catch (error) {
       console.error('Failed to fetch unread count:', error);
     }
@@ -124,26 +180,43 @@ export const NotificationProvider = ({ children }) => {
 
   // Mark notification as read
   const markAsRead = useCallback((notificationId) => {
-    if (!socket) return;
-    socket.emit('notification:mark-read', notificationId);
-  }, [socket]);
+    if (!stompClient || !stompClient.connected) {
+      console.warn('⚠️ STOMP not connected');
+      return;
+    }
+
+    stompClient.publish({
+      destination: '/app/notification.markRead',
+      body: JSON.stringify({ notificationId }),
+    });
+  }, [stompClient]);
 
   // Mark all as read
   const markAllAsRead = useCallback(() => {
-    if (!socket) return;
-    socket.emit('notification:mark-all-read');
-  }, [socket]);
+    if (!stompClient || !stompClient.connected) {
+      console.warn('⚠️ STOMP not connected');
+      return;
+    }
+
+    stompClient.publish({
+      destination: '/app/notification.markAllRead',
+      body: JSON.stringify({}),
+    });
+  }, [stompClient]);
 
   // Delete notification
   const deleteNotification = useCallback(async (notificationId) => {
     if (!token) return;
 
     try {
-      await fetch(`${NOTIFICATION_SERVICE_URL}/api/notifications/${notificationId}`, {
+      const response = await fetch(`${NOTIFICATION_SERVICE_URL}/api/notifications/${notificationId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      setNotifications((prev) => prev.filter((n) => n._id !== notificationId));
+      
+      if (response.ok) {
+        setNotifications((prev) => prev.filter((n) => n._id !== notificationId));
+      }
     } catch (error) {
       console.error('Failed to delete notification:', error);
     }
@@ -151,7 +224,6 @@ export const NotificationProvider = ({ children }) => {
 
   // Show toast notification
   const showToast = (notification) => {
-    // This will be handled by a toast component
     const event = new CustomEvent('show-notification-toast', { detail: notification });
     window.dispatchEvent(event);
   };
@@ -165,7 +237,7 @@ export const NotificationProvider = ({ children }) => {
   }, [token, fetchNotifications, fetchUnreadCount]);
 
   const value = {
-    socket,
+    stompClient,
     notifications,
     unreadCount,
     isConnected,
