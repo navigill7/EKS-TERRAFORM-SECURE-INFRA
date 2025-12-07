@@ -1,0 +1,62 @@
+server:
+  port: 4001
+  address: 0.0.0.0
+
+spring:
+  application:
+    name: notification-service
+
+  data:
+    mongodb:
+      uri: ${MONGO_URL:mongodb+srv://navi:Na%40080702@cluster0.z7hh1x3.mongodb.net/notification_db?retryWrites=true&w=majority&appName=Cluster0}
+      auto-index-creation: true
+
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    timeout: 60000
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:#$%IS78%^)()DHJBHJHJ!@EXTRA123456789ABCDEF}
+  expiration: 86400000
+
+# CORS Configuration
+cors:
+  allowed-origins: ${MAIN_APP_URL:http://localhost:3000}
+  allowed-methods: GET,POST,PUT,DELETE,PATCH,OPTIONS
+  allowed-headers: "*"
+  allow-credentials: true
+
+# Notification Configuration
+notification:
+  expiration-days: 90
+  queue:
+    retry-attempts: 3
+    retry-delay: 2000
+  grouping:
+    window-seconds: 300
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.unilink.notification: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# Actuator (Health Check)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
