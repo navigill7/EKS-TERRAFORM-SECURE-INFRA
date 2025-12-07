@@ -8,13 +8,14 @@ spring:
 
   data:
     mongodb:
-      uri: ${MONGO_URL:mongodb+srv://navi:Na%40080702@cluster0.z7hh1x3.mongodb.net/notification_db?retryWrites=true&w=majority&appName=Cluster0}
+      # ❌ REMOVED HARDCODED USERNAME & PASSWORD
+      uri: ${MONGO_URL:mongodb+srv://<username>:<password>@<cluster>.mongodb.net/notification_db}
       auto-index-creation: true
 
   redis:
     host: ${REDIS_HOST:localhost}
     port: ${REDIS_PORT:6379}
-    password: ${REDIS_PASSWORD:}
+    password: ${REDIS_PASSWORD:}   # ❌ EMPTY BY DEFAULT
     timeout: 60000
     lettuce:
       pool:
@@ -24,7 +25,8 @@ spring:
 
 # JWT Configuration
 jwt:
-  secret: ${JWT_SECRET:#$%IS78%^)()DHJBHJHJ!@EXTRA123456789ABCDEF}
+  # ❌ REMOVED HARDCODED SECRET
+  secret: ${JWT_SECRET:CHANGE_ME_IN_PRODUCTION}
   expiration: 86400000
 
 # CORS Configuration
