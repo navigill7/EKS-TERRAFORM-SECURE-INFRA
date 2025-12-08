@@ -1,4 +1,4 @@
-// client/src/context/NotificationContext.jsx (FIXED)
+// client/src/context/NotificationContext.jsx (UPDATED WITH DELETE & MARK READ)
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { Client } from '@stomp/stompjs';
@@ -35,7 +35,6 @@ export const NotificationProvider = ({ children }) => {
 
     console.log('🔌 Initializing STOMP connection...');
 
-    // Create STOMP client with SockJS
     const client = new Client({
       webSocketFactory: () => new SockJS(`${NOTIFICATION_SERVICE_URL}/ws`),
       
@@ -178,10 +177,12 @@ export const NotificationProvider = ({ children }) => {
     }
   }, [token]);
 
-  // Mark notification as read
+  // Mark notification as read (via WebSocket)
   const markAsRead = useCallback((notificationId) => {
     if (!stompClient || !stompClient.connected) {
-      console.warn('⚠️ STOMP not connected');
+      console.warn('⚠️ STOMP not connected, using HTTP fallback');
+      // HTTP Fallback
+      markAsReadHTTP(notificationId);
       return;
     }
 
@@ -191,10 +192,35 @@ export const NotificationProvider = ({ children }) => {
     });
   }, [stompClient]);
 
-  // Mark all as read
+  // HTTP fallback for mark as read
+  const markAsReadHTTP = useCallback(async (notificationId) => {
+    if (!token) return;
+
+    try {
+      const response = await fetch(
+        `${NOTIFICATION_SERVICE_URL}/api/notifications/${notificationId}/read`,
+        {
+          method: 'PATCH',
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.ok) {
+        setNotifications((prev) =>
+          prev.map((n) => (n._id === notificationId ? { ...n, read: true } : n))
+        );
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      }
+    } catch (error) {
+      console.error('Failed to mark as read:', error);
+    }
+  }, [token]);
+
+  // Mark all as read (via WebSocket)
   const markAllAsRead = useCallback(() => {
     if (!stompClient || !stompClient.connected) {
-      console.warn('⚠️ STOMP not connected');
+      console.warn('⚠️ STOMP not connected, using HTTP fallback');
+      markAllAsReadHTTP();
       return;
     }
 
@@ -204,23 +230,50 @@ export const NotificationProvider = ({ children }) => {
     });
   }, [stompClient]);
 
+  // HTTP fallback for mark all as read
+  const markAllAsReadHTTP = useCallback(async () => {
+    if (!token) return;
+
+    try {
+      const response = await fetch(`${NOTIFICATION_SERVICE_URL}/api/notifications/read-all`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+        setUnreadCount(0);
+      }
+    } catch (error) {
+      console.error('Failed to mark all as read:', error);
+    }
+  }, [token]);
+
   // Delete notification
   const deleteNotification = useCallback(async (notificationId) => {
     if (!token) return;
 
     try {
-      const response = await fetch(`${NOTIFICATION_SERVICE_URL}/api/notifications/${notificationId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      
+      const response = await fetch(
+        `${NOTIFICATION_SERVICE_URL}/api/notifications/${notificationId}`,
+        {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
       if (response.ok) {
         setNotifications((prev) => prev.filter((n) => n._id !== notificationId));
+        // Decrease unread count if notification was unread
+        const notification = notifications.find((n) => n._id === notificationId);
+        if (notification && !notification.read) {
+          setUnreadCount((prev) => Math.max(0, prev - 1));
+        }
       }
     } catch (error) {
       console.error('Failed to delete notification:', error);
     }
-  }, [token]);
+  }, [token, notifications]);
 
   // Show toast notification
   const showToast = (notification) => {
