@@ -15,6 +15,7 @@ import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
 import postRoutes from "./routes/posts.js";
 import s3Routes from "./routes/s3.js";
+import captionRoutes from "./routes/captions.js"; // 🆕 NEW IMPORT
 import { register } from "./controllers/auth.js";
 import { createPost } from "./controllers/posts.js";
 import { verifyToken } from "./middleware/auth.js";
@@ -36,12 +37,12 @@ app.use(
   })
 );
 
-app.use(express.json());
+app.use(express.json({ limit: "50mb" })); // 🆕 INCREASED LIMIT for base64 images
 app.use(helmet());
 app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
 app.use(morgan("common"));
-app.use(bodyParser.json({ limit: "30mb", extended: true }));
-app.use(bodyParser.urlencoded({ limit: "30mb", extended: true }));
+app.use(bodyParser.json({ limit: "50mb", extended: true })); // 🆕 INCREASED LIMIT
+app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 
 // Keep this for backwards compatibility (old images)
 app.use("/assets", express.static(path.join(__dirname, "public/assets")));
@@ -96,7 +97,7 @@ app.get("/auth/logout", (req, res) => {
   });
 });
 
-/* ROUTES - No more file upload routes needed */
+/* ROUTES */
 app.post("/auth/register", register);
 app.post("/posts", verifyToken, createPost);
 
@@ -105,7 +106,8 @@ app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
 app.use("/posts", postRoutes);
 app.use("/s3", s3Routes);
-app.use("/otp", otpRoutes); // MOVED HERE - after CORS
+app.use("/otp", otpRoutes);
+app.use("/captions", captionRoutes); // 🆕 NEW ROUTE
 
 /* START SERVER */
 const PORT = process.env.PORT || 3001;
