@@ -6,7 +6,6 @@ import MyPostWidget from "scenes/widgets/MyPostWidget";
 import PostsWidget from "scenes/widgets/PostsWidget";
 import EventsWidget from "scenes/widgets/Events";
 import ConnectionListWidget from "scenes/widgets/ConnectionListWidget";
-import SocialUrlsTest from "components/SocialUrlTest"; 
 
 const HomePage = () => {
   const { _id, picturePath } = useSelector((state) => state.user);
@@ -34,23 +33,32 @@ const HomePage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-grey-50 dark:bg-grey-900">
+    <div className="min-h-screen bg-grey-50 dark:bg-grey-900 flex flex-col">
       <Navbar />
-      <div className="w-full px-[6%] py-8">
-        <div className="flex flex-col lg:flex-row gap-6 justify-between">
-          {/* Left Sidebar */}
-          <div className="w-full lg:w-[26%]">
+      
+      {/* Fixed height container for the content below navbar */}
+      <div className="flex-1 w-full px-[6%] py-8 overflow-hidden">
+        <div className="flex flex-col lg:flex-row gap-6 justify-between h-full">
+          {/* Left Sidebar - Fixed, Scrollable if content overflows */}
+          <div className="w-full lg:w-[26%] lg:overflow-y-auto lg:h-[calc(100vh-120px)] space-y-6 scrollbar-thin scrollbar-thumb-grey-300 dark:scrollbar-thumb-grey-700 scrollbar-track-transparent">
             <UserWidget userId={_id} picturePath={picturePath} />
           </div>
 
-          {/* Main Content */}
-          <div className="w-full lg:w-[42%] space-y-6">
-            <MyPostWidget picturePath={picturePath} />
-            <PostsWidget userId={_id} />
+          {/* Main Content - Fixed MyPostWidget + Scrollable Posts */}
+          <div className="w-full lg:w-[42%] lg:h-[calc(100vh-120px)] flex flex-col space-y-6">
+            {/* Fixed MyPostWidget */}
+            <div className="flex-shrink-0">
+              <MyPostWidget picturePath={picturePath} />
+            </div>
+            
+            {/* Scrollable Posts Only */}
+            <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-grey-300 dark:scrollbar-thumb-grey-700 scrollbar-track-transparent">
+              <PostsWidget userId={_id} />
+            </div>
           </div>
 
-          {/* Right Sidebar */}
-          <div className="hidden lg:block w-full lg:w-[26%] space-y-6">
+          {/* Right Sidebar - Fixed, Scrollable if content overflows */}
+          <div className="hidden lg:block w-full lg:w-[26%] lg:overflow-y-auto lg:h-[calc(100vh-120px)] space-y-6 scrollbar-thin scrollbar-thumb-grey-300 dark:scrollbar-thumb-grey-700 scrollbar-track-transparent">
             <EventsWidget />
             <ConnectionListWidget userId={_id} />
           </div>
@@ -62,6 +70,35 @@ const HomePage = () => {
           className="fixed bottom-5 right-5 z-[999]"
         ></div>
       </div>
+
+      {/* Custom Scrollbar Styles */}
+      <style jsx>{`
+        .scrollbar-thin::-webkit-scrollbar {
+          width: 6px;
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        
+        .scrollbar-thumb-grey-300::-webkit-scrollbar-thumb {
+          background-color: #d1d5db;
+          border-radius: 3px;
+        }
+        
+        .dark .scrollbar-thumb-grey-700::-webkit-scrollbar-thumb {
+          background-color: #374151;
+          border-radius: 3px;
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+          background-color: #9ca3af;
+        }
+        
+        .dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+          background-color: #4b5563;
+        }
+      `}</style>
     </div>
   );
 };
